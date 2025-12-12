@@ -2,12 +2,16 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Users, Briefcase, Factory, ShoppingBag } from 'lucide-react';
-import './Dashboard.css'; // We'll create this
+import { useNavigate } from 'react-router-dom';
+import './Dashboard.css';
 
 const Dashboard = () => {
+    const navigate = useNavigate();
     const [stats, setStats] = useState({
         total: 0,
-        breakdown: { manufacturing: 0, services: 0, trading: 0 }
+        resolved: 0,
+        pending: 0,
+        breakdown: { manufacturing: 0, services: 0, retail: 0 }
     });
     const [recent, setRecent] = useState([]);
 
@@ -27,8 +31,8 @@ const Dashboard = () => {
 
     const fetchRecent = async () => {
         try {
-            const res = await axios.get('http://localhost:5001/api/msme'); // Use limit/sort in backend ideally
-            setRecent(res.data.slice(0, 5)); // Just take first 5
+            const res = await axios.get('http://localhost:5001/api/msme');
+            setRecent(res.data.slice(0, 5));
         } catch (err) {
             console.error('Recent Error:', err);
         }
@@ -37,7 +41,7 @@ const Dashboard = () => {
     const data = [
         { name: 'Manufacturing', value: stats.breakdown.manufacturing },
         { name: 'Services', value: stats.breakdown.services },
-        { name: 'Trading', value: stats.breakdown.trading },
+        { name: 'Retail', value: stats.breakdown.retail },
     ];
 
     return (
@@ -53,22 +57,15 @@ const Dashboard = () => {
                 <div className="stat-card">
                     <div className="stat-icon bg-green"><Factory color="white" /></div>
                     <div>
-                        <h3>{stats.breakdown.manufacturing}</h3>
-                        <p>Manufacturing</p>
+                        <h3>{stats.resolved}</h3>
+                        <p>Cases Resolved</p>
                     </div>
                 </div>
                 <div className="stat-card">
                     <div className="stat-icon bg-orange"><Briefcase color="white" /></div>
                     <div>
-                        <h3>{stats.breakdown.services}</h3>
-                        <p>Services</p>
-                    </div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-icon bg-purple"><ShoppingBag color="white" /></div>
-                    <div>
-                        <h3>{stats.breakdown.trading}</h3>
-                        <p>Trading</p>
+                        <h3>{stats.pending}</h3>
+                        <p>Pending Cases</p>
                     </div>
                 </div>
             </div>
@@ -94,12 +91,14 @@ const Dashboard = () => {
                     <h3 className="section-title">Recent Assistance</h3>
                     <div className="recent-list">
                         {recent.map((item) => (
-                            <div key={item._id} className="recent-item">
+                            <div key={item._id} className="recent-item" onClick={() => navigate(`/msme/${item._id}`)} style={{ cursor: 'pointer' }}>
                                 <div className="recent-info">
                                     <h4>{item.businessName}</h4>
                                     <span>{item.entrepreneurName}</span>
                                 </div>
-                                <div className="recent-type badge">{item.businessType}</div>
+                                <div className={`badge ${item.status === 'Resolved' ? 'bg-green' : 'bg-orange'}`} style={{ color: 'white', fontSize: '0.8rem' }}>
+                                    {item.status || 'Pending'}
+                                </div>
                             </div>
                         ))}
                         {recent.length === 0 && <p className="text-muted">No entries yet.</p>}
