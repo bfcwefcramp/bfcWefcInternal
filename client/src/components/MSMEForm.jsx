@@ -85,26 +85,20 @@ const MSMEForm = () => {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             setSuccess(true);
-            // Reset Form
-            setFormData({
-                dateOfVisit: new Date().toISOString().split('T')[0],
-                assistedBy: 'BFC', visitorName: '', visitorCategory: 'Existing MSME',
-                visitorCategoryOther: '', gender: 'Male', caste: 'General',
-                contactNumber: '', email: '', address: '', businessName: '',
-                udyamRegistrationNo: '', enterpriseType: 'Micro', sector: 'Manufacturing',
+            // Reset Form (Simplified reset)
+            setFormData(prev => ({
+                ...prev,
+                visitorName: '', contactNumber: '', email: '',
+                address: '', businessName: '', udyamRegistrationNo: '',
                 purposeOfVisit: '', supportDetails: '', followUpAction: '',
-                queryResolutionRequired: '', status: 'Pending'
-            });
+                queryResolutionRequired: ''
+            }));
             setExperts(['']);
             setPhotos([]);
-            // Clear file input manually if needed (using ref) or just rely on state
-            setExperts(['']);
-            setPhotos([]);
-            // Clear file input manually if needed (using ref) or just rely on state
-            // setTimeout removed to keep modal open until user clicks Done
         } catch (err) {
             console.error(err);
-            alert('Error submitting form');
+            const errMsg = err.response?.data?.error || err.response?.data?.message || 'Error submitting form';
+            alert(`Failed: ${errMsg}`);
         } finally {
             setLoading(false);
         }
@@ -117,8 +111,27 @@ const MSMEForm = () => {
 
                 {/* Success Modal */}
                 {success && (
-                    <div className="modal-overlay">
-                        <div className="modal-content">
+                    <div className="modal-overlay" style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        zIndex: 1000
+                    }}>
+                        <div className="modal-content" style={{
+                            backgroundColor: 'white',
+                            padding: '2rem',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                            textAlign: 'center',
+                            maxWidth: '400px',
+                            width: '90%'
+                        }}>
                             <div className="modal-icon">🎉</div>
                             <h3>Entry Submitted!</h3>
                             <p>The visitor details have been recorded successfully.</p>
