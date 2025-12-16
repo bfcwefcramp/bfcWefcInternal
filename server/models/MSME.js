@@ -1,40 +1,32 @@
 const mongoose = require('mongoose');
 
 const MSMESchema = new mongoose.Schema({
-  dateOfVisit: { type: Date, default: Date.now },
-  assistedBy: { type: String, enum: ['BFC', 'WEFC'] },
-  visitorName: { type: String, required: true },
-  visitorCategory: {
-    type: String,
-    enum: ['Existing MSME', 'Aspiring MSME', 'SHG Member', 'Others']
-  },
-  visitorCategoryOther: { type: String }, // Populated if Category is 'Others'
-  gender: { type: String, enum: ['Male', 'Female'] },
-  caste: { type: String, enum: ['General', 'SC', 'ST', 'OBC'] },
-  contactNumber: { type: String },
-  email: { type: String },
-
-  // Business Details
-  address: { type: String }, // Business Unit Address
+  // From Excel
+  serialNo: { type: String }, // Sr. No.
+  dateOfVisit: { type: Date, default: Date.now }, // Date of visit to DITC
+  assistedBy: { type: String }, // Assisted by BFC or WEFC
+  visitorName: { type: String }, // Name of Visitor
+  visitorCategory: { type: String }, // Category of visitor
+  visitorCategoryOther: { type: String }, // Pls specify details if Others
+  gender: { type: String }, // Gender (M/F)
+  caste: { type: String }, // Caste (General/SC/ST/OBC)
+  contactNumber: { type: String }, // Contact Number
+  email: { type: String }, // E-Mail ID
+  address: { type: String }, // Address
   businessName: { type: String }, // Name of Business Unit
-  udyamRegistrationNo: { type: String },
-  enterpriseType: {
-    type: String,
-    enum: ['Micro', 'Small', 'Medium']
-  },
-  sector: {
-    type: String,
-    enum: ['Manufacturing', 'Service', 'Retail Trade']
-  },
-
-  // Visit & Support Details
-  purposeOfVisit: { type: String },
-  expertName: [{ type: String }], // Array for multiple experts
-  status: { type: String, enum: ['Resolved', 'Pending'], default: 'Pending' },
+  udyamRegistrationNo: { type: String }, // Udyam Registration Number
+  enterpriseType: { type: String }, // Type of Buisness (Micro, Small, Medium)
+  sector: { type: String }, // Sector (Manufacturing, Service, Retail Trade)
+  purposeOfVisit: { type: String }, // Puropose of Visit
+  expertName: { type: String }, // Name of BFC or WEFC Expert met
+  status: { type: String, default: 'Pending' }, // Not explicitly in Excel, but needed for UI. Defaulting.
   supportDetails: { type: String }, // Details of support rendered
-  photos: [{ type: String }], // URLs or paths to uploaded files
-  followUpAction: { type: String },
-  queryResolutionRequired: { type: String }, // Assistance required by Expert
+  photos: { type: String }, // Photos (assuming string URL or path)
+  followUpAction: { type: String }, // Follow up action required
+  queryResolutionRequired: { type: String }, // Assitance required...
+
+  // New / Derived Fields
+  area: { type: String, enum: ['North Goa', 'South Goa', 'Unknown'], default: 'Unknown' },
 
   createdAt: { type: Date, default: Date.now }
 });

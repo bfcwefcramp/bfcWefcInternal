@@ -11,7 +11,9 @@ const Dashboard = () => {
         total: 0,
         resolved: 0,
         pending: 0,
-        breakdown: { manufacturing: 0, services: 0, retail: 0 }
+        area: [],
+        sector: [],
+        sectorRaw: []
     });
     const [recent, setRecent] = useState([]);
 
@@ -38,30 +40,29 @@ const Dashboard = () => {
         }
     };
 
-    const data = [
-        { name: 'Manufacturing', value: stats.breakdown.manufacturing },
-        { name: 'Services', value: stats.breakdown.services },
-        { name: 'Retail', value: stats.breakdown.retail },
+    // Use sector data directly from API if available
+    const chartData = stats.sectorRaw && stats.sectorRaw.length > 0 ? stats.sectorRaw : [
+        { name: 'No Data', value: 0 }
     ];
 
     return (
         <div className="dashboard-container">
             <div className="stats-grid">
-                <div className="stat-card">
+                <div className="stat-card" onClick={() => navigate('/list')} style={{ cursor: 'pointer' }}>
                     <div className="stat-icon bg-blue"><Users color="white" /></div>
                     <div>
                         <h3>{stats.total}</h3>
                         <p>Total Assisted</p>
                     </div>
                 </div>
-                <div className="stat-card">
+                <div className="stat-card" onClick={() => navigate('/list?status=Resolved')} style={{ cursor: 'pointer' }}>
                     <div className="stat-icon bg-green"><Factory color="white" /></div>
                     <div>
                         <h3>{stats.resolved}</h3>
                         <p>Cases Resolved</p>
                     </div>
                 </div>
-                <div className="stat-card">
+                <div className="stat-card" onClick={() => navigate('/list?status=Pending')} style={{ cursor: 'pointer' }}>
                     <div className="stat-icon bg-orange"><Briefcase color="white" /></div>
                     <div>
                         <h3>{stats.pending}</h3>
@@ -72,10 +73,10 @@ const Dashboard = () => {
 
             <div className="dashboard-charts-row">
                 <div className="card chart-card">
-                    <h3 className="section-title">Assistance Breakdown</h3>
-                    <div style={{ width: '100%', height: 300 }}>
-                        <ResponsiveContainer>
-                            <BarChart data={data}>
+                    <h3 className="section-title">Assistance Breakdown (Sector)</h3>
+                    <div style={{ width: '100%', height: 300, minHeight: 300 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartData}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" />
                                 <YAxis />
