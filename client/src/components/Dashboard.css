@@ -46,6 +46,10 @@
     background: #8b5cf6;
 }
 
+.bg-rose {
+    background: #e11d48;
+}
+
 .stat-card h3 {
     font-size: 1.8rem;
     font-weight: 700;
