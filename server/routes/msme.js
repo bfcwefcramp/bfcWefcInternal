@@ -44,11 +44,22 @@ router.post('/', upload.array('photos', 5), async (req, res) => {
 // GET: Get all MSME records with Filtering
 router.get('/', async (req, res) => {
     try {
-        const { area, sector, enterpriseType, status, search, startDate, endDate } = req.query;
+        const { area, sector, rawSector, enterpriseType, status, search, startDate, endDate } = req.query;
         let query = {};
 
         if (area) query.area = area;
-        if (sector) query.sector = sector;
+
+        // Sector Filtering Logic:
+        // rawSector = Exact Match (for Detailed Bar Chart)
+        // sector = Broad/Regex Match (for Pie Chart & Dropdown)
+        if (rawSector) {
+            // Escape special regex characters (especially '+') to ensure literal match
+            const escapedRawSector = rawSector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            query.sector = { $regex: new RegExp(`^${escapedRawSector}$`, 'i') };
+        } else if (sector) {
+            query.sector = { $regex: sector, $options: 'i' };
+        }
+
         if (status) query.status = status;
         if (enterpriseType) query.enterpriseType = enterpriseType;
 
@@ -132,6 +143,42 @@ router.get('/stats', async (req, res) => {
             ],
             sector: sectorStats,
             sectorRaw: sectorStatsRaw
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET: Expert specific stats
+router.get('/expert-stats/:expertName', async (req, res) => {
+    try {
+        const { expertName } = req.params;
+        // Use regex for case-insensitive matching or exact match depending on data quality
+        // Data quality seems variable, so case-insensitive is safer.
+        const query = { expertName: { $regex: new RegExp(`^${expertName}$`, 'i') } };
+
+        const totalVisits = await MSME.countDocuments(query);
+        const resolved = await MSME.countDocuments({ ...query, status: { $regex: 'Resolved', $options: 'i' } });
+        const pending = await MSME.countDocuments({ ...query, status: { $regex: 'Pending', $options: 'i' } });
+
+        // Count Udyam Registrations (where field is not empty/null)
+        const registrations = await MSME.countDocuments({
+            ...query,
+            udyamRegistrationNo: { $exists: true, $ne: '', $not: { $regex: /^\s*$/ } }
+        });
+
+        // Get recent activity (last 5)
+        const recentActivity = await MSME.find(query)
+            .sort({ dateOfVisit: -1 })
+            .limit(5)
+            .select('businessName dateOfVisit status purposeOfVisit');
+
+        res.json({
+            totalVisits,
+            resolved,
+            pending,
+            registrations,
+            recentActivity
         });
     } catch (err) {
         res.status(500).json({ error: err.message });

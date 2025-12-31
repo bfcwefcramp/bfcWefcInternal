@@ -1,11 +1,12 @@
 
+
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { Filter, Search } from 'lucide-react';
+import { Filter, Search, X, ChevronDown } from 'lucide-react';
 import './Dashboard.css';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
@@ -15,15 +16,27 @@ const MSMEList = () => {
     const location = useLocation();
 
     const [msmes, setMsmes] = useState([]);
-    const [stats, setStats] = useState({ area: [], sector: [] });
+    const [stats, setStats] = useState({ area: [], sector: [], sectorRaw: [] });
     const [loading, setLoading] = useState(true);
 
-    // Initialize filters from URL params if present
+    // Initial Filters
+    const initialFilters = {
+        area: '',
+        sector: '',
+        rawSector: '',
+        enterpriseType: '',
+        status: '',
+        search: '',
+        startDate: '',
+        endDate: ''
+    };
+
     const [filters, setFilters] = useState(() => {
         const params = new URLSearchParams(location.search);
         return {
             area: params.get('area') || '',
             sector: params.get('sector') || '',
+            rawSector: params.get('rawSector') || '',
             enterpriseType: params.get('enterpriseType') || '',
             status: params.get('status') || '',
             search: params.get('search') || '',
@@ -32,12 +45,13 @@ const MSMEList = () => {
         };
     });
 
+    // UI State for Filter Menu
+    const [activeFilterMenu, setActiveFilterMenu] = useState(null); // 'area', 'sector', 'date', 'category'
+
     const fetchData = async () => {
         setLoading(true);
         try {
-            // Build query string
             const params = new URLSearchParams(filters);
-            // Remove empty keys
             Object.keys(filters).forEach(key =>
                 (filters[key] === '' || filters[key] === null) && params.delete(key)
             );
@@ -50,7 +64,8 @@ const MSMEList = () => {
             setMsmes(listRes.data);
             setStats({
                 area: statsRes.data.area,
-                sector: statsRes.data.sector
+                sector: statsRes.data.sector, // Grouped
+                sectorRaw: statsRes.data.sectorRaw // Raw for Bar Chart
             });
         } catch (err) {
             console.error('Error fetching data:', err);
@@ -63,38 +78,70 @@ const MSMEList = () => {
         fetchData();
     }, [filters]);
 
-    // Update filters if URL changes (e.g. navigation from dashboard)
     useEffect(() => {
         const params = new URLSearchParams(location.search);
-        // Only update status if it's in the param and different, 
-        // to avoid resetting other user-set filters if we just navigated here
-        if (params.get('status')) {
-            setFilters(prev => ({
-                ...prev,
-                status: params.get('status') || prev.status
-            }));
-        }
+        // Only update if explicit params are passed
+        if (params.get('status')) setFilters(prev => ({ ...prev, status: params.get('status') }));
+        if (params.get('area')) setFilters(prev => ({ ...prev, area: params.get('area') }));
+        if (params.get('sector')) setFilters(prev => ({ ...prev, sector: params.get('sector'), rawSector: '' }));
     }, [location.search]);
 
-    const handleFilterChange = (e) => {
-        setFilters({ ...filters, [e.target.name]: e.target.value });
+    const handleFilterChange = (key, value) => {
+        // If setting sector (broad), clear rawSector (exact) and vice versa
+        if (key === 'sector') {
+            setFilters(prev => ({ ...prev, sector: value, rawSector: '' }));
+        } else if (key === 'rawSector') {
+            setFilters(prev => ({ ...prev, rawSector: value, sector: '' }));
+        } else {
+            setFilters(prev => ({ ...prev, [key]: value }));
+        }
     };
+
+    const resetFilters = () => {
+        setFilters(initialFilters);
+        setActiveFilterMenu(null);
+    };
+
+    // Chart Click Handlers
+    const onAreaClick = (data) => {
+        if (data && data.activePayload && data.activePayload[0]) {
+            handleFilterChange('area', data.activePayload[0].payload.name);
+        }
+    };
+
+    const onSectorClick = (data) => {
+        // Pie Chart click -> Broad Category Filter
+        if (data && data.name) {
+            if (data.name !== 'Others') {
+                handleFilterChange('sector', data.name);
+            }
+        }
+    };
+
+    const onRawSectorClick = (data) => {
+        // Bar Chart click -> Exact Raw Filter
+        if (data && data.activePayload && data.activePayload[0]) {
+            handleFilterChange('rawSector', data.activePayload[0].payload.name);
+        }
+    };
+
 
     return (
         <div className="dashboard-container">
             <h2 className="title">Visited MSMEs Analysis</h2>
 
             {/* Charts Section */}
-            <div className="charts-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+            <div className="charts-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
+                {/* Chart 1: Area */}
                 <div className="card chart-card">
                     <h3>Area Wise Distribution</h3>
                     <div style={{ width: '100%', height: 300 }}>
                         <ResponsiveContainer>
-                            <BarChart data={stats.area}>
+                            <BarChart data={stats.area} onClick={onAreaClick} style={{ cursor: 'pointer' }}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" />
                                 <YAxis />
-                                <Tooltip />
+                                <Tooltip cursor={{ fill: 'transparent' }} />
                                 <Bar dataKey="value" fill="#8884d8" name="Count">
                                     {stats.area?.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -105,8 +152,9 @@ const MSMEList = () => {
                     </div>
                 </div>
 
+                {/* Chart 2: Sector Grouped */}
                 <div className="card chart-card">
-                    <h3>Sector Wise Distribution</h3>
+                    <h3>Sector Wise (Grouped)</h3>
                     <div style={{ width: '100%', height: 300 }}>
                         <ResponsiveContainer>
                             <PieChart>
@@ -120,6 +168,8 @@ const MSMEList = () => {
                                     paddingAngle={2}
                                     dataKey="value"
                                     label
+                                    onClick={onSectorClick}
+                                    style={{ cursor: 'pointer' }}
                                 >
                                     {stats.sector?.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -131,83 +181,157 @@ const MSMEList = () => {
                         </ResponsiveContainer>
                     </div>
                 </div>
-            </div>
 
-            {/* Filters Section */}
-            <div className="card" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
-                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-
-                    {/* Primary Filters Row */}
-                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', flex: 1, width: '100%' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '250px', flex: 2 }}>
-                            <Search size={20} color="#666" />
-                            <input
-                                type="text"
-                                name="search"
-                                placeholder="Search by Name..."
-                                value={filters.search}
-                                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                                style={{ flex: 1, padding: '0.6rem', borderRadius: '6px', border: '1px solid #ddd' }}
-                            />
-                        </div>
-
-                        <select name="status" value={filters.status} onChange={handleFilterChange} className="filter-select" style={{ flex: 1, minWidth: '150px' }}>
-                            <option value="">All Statuses</option>
-                            <option value="Pending">Pending</option>
-                            <option value="Resolved">Resolved</option>
-                        </select>
-                    </div>
-
-                    {/* Secondary Filters Row */}
-                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', width: '100%' }}>
-                        <select name="area" value={filters.area} onChange={handleFilterChange} className="filter-select" style={{ flex: 1 }}>
-                            <option value="">All Areas</option>
-                            <option value="North Goa">North Goa</option>
-                            <option value="South Goa">South Goa</option>
-                        </select>
-
-                        <select name="sector" value={filters.sector} onChange={handleFilterChange} className="filter-select" style={{ flex: 1 }}>
-                            <option value="">All Sectors</option>
-                            <option value="Manufacturing">Manufacturing</option>
-                            <option value="Service">Service</option>
-                            <option value="Retail Trade">Retail Trade</option>
-                        </select>
-
-                        <select name="enterpriseType" value={filters.enterpriseType} onChange={handleFilterChange} className="filter-select" style={{ flex: 1 }}>
-                            <option value="">All Categories</option>
-                            <option value="Micro">Micro</option>
-                            <option value="Small">Small</option>
-                            <option value="Medium">Medium</option>
-                        </select>
-
-                        {/* Stacked Date Inputs */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            <input
-                                type="date"
-                                name="startDate"
-                                value={filters.startDate || ''}
-                                onChange={handleFilterChange}
-                                style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #ddd', fontSize: '0.85rem' }}
-                                placeholder="From Date"
-                            />
-                            <input
-                                type="date"
-                                name="endDate"
-                                value={filters.endDate || ''}
-                                onChange={handleFilterChange}
-                                style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #ddd', fontSize: '0.85rem' }}
-                                placeholder="To Date"
-                            />
-                        </div>
+                {/* Chart 3: Sector Raw (Moved from Dashboard) */}
+                <div className="card chart-card" style={{ gridColumn: '1 / -1' }}>
+                    <h3>Detailed Sector Breakdown</h3>
+                    <div style={{ width: '100%', height: 300 }}>
+                        <ResponsiveContainer>
+                            <BarChart data={stats.sectorRaw} onClick={onRawSectorClick} style={{ cursor: 'pointer' }}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" interval={0} height={60} tick={{ fontSize: 10 }} />
+                                <YAxis />
+                                <Tooltip cursor={{ fill: 'transparent' }} />
+                                <Bar dataKey="value" fill="#f59e0b" name="Count" />
+                            </BarChart>
+                        </ResponsiveContainer>
                     </div>
                 </div>
             </div>
 
+            {/* Filter Section (New Design) */}
+            <div className="card" style={{ padding: '1rem', marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+
+                    {/* Search */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '200px', border: '1px solid #ddd', padding: '0.4rem 0.8rem', borderRadius: '6px' }}>
+                        <Search size={18} color="#666" />
+                        <input
+                            type="text"
+                            placeholder="Search Name..."
+                            value={filters.search}
+                            onChange={(e) => handleFilterChange('search', e.target.value)}
+                            style={{ border: 'none', outline: 'none', width: '100%' }}
+                        />
+                    </div>
+
+                    <div style={{ width: '1px', height: '24px', background: '#ddd', margin: '0 0.5rem' }}></div>
+
+                    {/* Filter By Menu */}
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <span style={{ fontWeight: 600, color: '#4b5563', marginRight: '0.5rem' }}>Filter By:</span>
+
+                        {['Area', 'Sector', 'Category', 'Date'].map(type => (
+                            <button
+                                key={type}
+                                onClick={() => setActiveFilterMenu(activeFilterMenu === type ? null : type)}
+                                style={{
+                                    padding: '0.4rem 0.8rem',
+                                    borderRadius: '20px',
+                                    border: `1px solid ${activeFilterMenu === type ? '#3b82f6' : '#ddd'}`,
+                                    background: activeFilterMenu === type ? '#eff6ff' : 'white',
+                                    color: activeFilterMenu === type ? '#1d4ed8' : '#374151',
+                                    cursor: 'pointer',
+                                    fontSize: '0.9rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.25rem'
+                                }}
+                            >
+                                {type} <ChevronDown size={14} />
+                            </button>
+                        ))}
+                    </div>
+
+
+                    <button onClick={resetFilters} style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}>
+                        <X size={14} /> Reset Filters
+                    </button>
+                </div>
+
+                {/* Sub-Filters Panel */}
+                {activeFilterMenu && (
+                    <div style={{ marginTop: '1rem', padding: '1rem', background: '#f9fafb', borderRadius: '8px', border: '1px solid #eee', animation: 'fadeIn 0.2s' }}>
+
+                        {activeFilterMenu === 'Area' && (
+                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                {['North Goa', 'South Goa'].map(opt => (
+                                    <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                        <input
+                                            type="radio"
+                                            name="area"
+                                            checked={filters.area === opt}
+                                            onChange={() => handleFilterChange('area', opt)}
+                                        />
+                                        {opt}
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+
+                        {activeFilterMenu === 'Sector' && (
+                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                {['Manufacturing', 'Service', 'Retail Trade'].map(opt => (
+                                    <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                        <input
+                                            type="radio"
+                                            name="sector"
+                                            checked={filters.sector === opt}
+                                            onChange={() => handleFilterChange('sector', opt)}
+                                        />
+                                        {opt}
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+
+                        {activeFilterMenu === 'Category' && (
+                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                {['Micro', 'Small', 'Medium'].map(opt => (
+                                    <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                        <input
+                                            type="radio"
+                                            name="enterpriseType"
+                                            checked={filters.enterpriseType === opt}
+                                            onChange={() => handleFilterChange('enterpriseType', opt)}
+                                        />
+                                        {opt}
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+
+                        {activeFilterMenu === 'Date' && (
+                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                <input
+                                    type="date"
+                                    value={filters.startDate}
+                                    onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                                    style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                                />
+                                <span>to</span>
+                                <input
+                                    type="date"
+                                    value={filters.endDate}
+                                    onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                                    style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                                />
+                            </div>
+                        )}
+
+                    </div>
+                )}
+            </div>
+
             {/* List Section */}
             <div className="card list-card" style={{ marginTop: '0' }}>
+                <div style={{ padding: '1rem', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Results ({msmes.length})</h3>
+                    {/* Active Filters Tags could go here */}
+                </div>
                 <div className="recent-list">
                     {msmes.map((item) => (
-                        <div key={item._id} className="recent-item" onClick={() => navigate(`/msme/${item._id}`)} style={{ cursor: 'pointer', transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-2px)' } }}>
+                        <div key={item._id} className="recent-item" onClick={() => navigate(`/msme/${item._id}`)} style={{ cursor: 'pointer' }}>
                             <div className="recent-info">
                                 <h4 style={{ fontSize: '1.1rem', color: '#1f2937' }}>{item.businessName || item.visitorName}</h4>
                                 <div style={{ display: 'flex', gap: '10px', fontSize: '0.9rem', color: '#666', marginTop: '4px' }}>
@@ -217,6 +341,7 @@ const MSMEList = () => {
                                 </div>
                             </div>
                             <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                                {item.status && <span className="badge" style={{ background: item.status === 'Resolved' ? '#10b981' : '#e11d48', color: 'white' }}>{item.status}</span>}
                                 {item.area && <span className="badge" style={{ background: item.area === 'North Goa' ? '#3b82f6' : '#8b5cf6', color: 'white' }}>{item.area}</span>}
                                 {item.enterpriseType && <span className="badge" style={{ background: '#e5e7eb', color: '#374151' }}>{item.enterpriseType}</span>}
                                 <span className="badge" style={{ background: '#f59e0b1a', color: '#b45309' }}>{item.sector || 'General'}</span>

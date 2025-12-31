@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import axios from 'axios';
 import './MSMEForm.css';
 
@@ -40,10 +41,48 @@ const MSMEForm = () => {
     };
 
     // Expert Handlers
+    const [allExperts, setAllExperts] = useState([]);
+    const [suggestions, setSuggestions] = useState({}); // { index: [expert list] }
+
+    useEffect(() => {
+        const fetchExperts = async () => {
+            try {
+                const res = await axios.get('http://localhost:5001/api/experts');
+                setAllExperts(res.data);
+            } catch (err) { console.error(err); }
+        };
+        fetchExperts();
+    }, []);
+
     const handleExpertChange = (index, value) => {
         const newExperts = [...experts];
         newExperts[index] = value;
         setExperts(newExperts);
+
+        // Filter suggestions if length >= 2
+        if (value.length >= 2) {
+            const filtered = allExperts.filter(exp =>
+                exp.name.toLowerCase().includes(value.toLowerCase())
+            );
+            setSuggestions(prev => ({ ...prev, [index]: filtered }));
+        } else {
+            setSuggestions(prev => {
+                const newState = { ...prev };
+                delete newState[index];
+                return newState;
+            });
+        }
+    };
+
+    const selectSuggestion = (index, name) => {
+        const newExperts = [...experts];
+        newExperts[index] = name;
+        setExperts(newExperts);
+        setSuggestions(prev => {
+            const newState = { ...prev };
+            delete newState[index];
+            return newState;
+        });
     };
 
     const addExpertField = () => {
@@ -55,7 +94,8 @@ const MSMEForm = () => {
         setExperts(newExperts);
     };
 
-    // File Handler
+    // ... (File Handler remains same)
+
     const handleFileChange = (e) => {
         setPhotos(e.target.files);
     };
@@ -110,7 +150,7 @@ const MSMEForm = () => {
                 <h2 className="title">Visitor Entry Form (BFC & WEFC)</h2>
 
                 {/* Success Modal */}
-                {success && (
+                {success && ReactDOM.createPortal(
                     <div className="modal-overlay" style={{
                         position: 'fixed',
                         top: 0,
@@ -121,13 +161,13 @@ const MSMEForm = () => {
                         display: 'flex',
                         justifyContent: 'center',
                         alignItems: 'center',
-                        zIndex: 1000
+                        zIndex: 9999
                     }}>
                         <div className="modal-content" style={{
                             backgroundColor: 'white',
                             padding: '2rem',
                             borderRadius: '8px',
-                            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
                             textAlign: 'center',
                             maxWidth: '400px',
                             width: '90%'
@@ -137,7 +177,8 @@ const MSMEForm = () => {
                             <p>The visitor details have been recorded successfully.</p>
                             <button onClick={() => setSuccess(false)} className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>Done</button>
                         </div>
-                    </div>
+                    </div>,
+                    document.body
                 )}
 
                 <form onSubmit={handleSubmit}>
@@ -168,14 +209,34 @@ const MSMEForm = () => {
                     <div className="input-group">
                         <label className="input-label">Experts Met</label>
                         {experts.map((expert, index) => (
-                            <div key={index} className="expert-input-row">
+                            <div key={index} className="expert-input-row" style={{ position: 'relative' }}>
                                 <input
                                     type="text"
                                     value={expert}
                                     onChange={(e) => handleExpertChange(index, e.target.value)}
                                     className="input-field"
                                     placeholder={`Expert Name ${index + 1}`}
+                                    autoComplete="off"
                                 />
+                                {suggestions[index] && suggestions[index].length > 0 && (
+                                    <ul style={{
+                                        position: 'absolute', top: '100%', left: 0, width: '100%',
+                                        background: 'white', border: '1px solid #ddd', zIndex: 10,
+                                        listStyle: 'none', padding: 0, margin: 0, maxHeight: '150px', overflowY: 'auto'
+                                    }}>
+                                        {suggestions[index].map(sug => (
+                                            <li
+                                                key={sug._id}
+                                                onClick={() => selectSuggestion(index, sug.name)}
+                                                style={{ padding: '0.5rem', cursor: 'pointer', borderBottom: '1px solid #eee' }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                            >
+                                                {sug.name} <small style={{ color: '#888' }}>({sug.designation})</small>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
                                 {experts.length > 1 && (
                                     <button type="button" onClick={() => removeExpertField(index)} className="btn-remove">X</button>
                                 )}

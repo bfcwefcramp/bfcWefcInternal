@@ -63,7 +63,7 @@ const Dashboard = () => {
                     </div>
                 </div>
                 <div className="stat-card" onClick={() => navigate('/list?status=Pending')} style={{ cursor: 'pointer' }}>
-                    <div className="stat-icon bg-orange"><Briefcase color="white" /></div>
+                    <div className="stat-icon bg-rose"><Briefcase color="white" /></div>
                     <div>
                         <h3>{stats.pending}</h3>
                         <p>Pending Cases</p>
@@ -72,23 +72,7 @@ const Dashboard = () => {
             </div>
 
             <div className="dashboard-charts-row">
-                <div className="card chart-card">
-                    <h3 className="section-title">Assistance Breakdown (Sector)</h3>
-                    <div style={{ width: '100%', height: 300, minHeight: 300 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip />
-                                <Legend />
-                                <Bar dataKey="value" fill="#f59e0b" />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                <div className="card list-card">
+                <div className="card list-card" style={{ width: '100%' }}>
                     <h3 className="section-title">Recent Assistance</h3>
                     <div className="recent-list">
                         {recent.map((item) => (
@@ -97,7 +81,7 @@ const Dashboard = () => {
                                     <h4>{item.businessName}</h4>
                                     <span>{item.entrepreneurName}</span>
                                 </div>
-                                <div className={`badge ${item.status === 'Resolved' ? 'bg-green' : 'bg-orange'}`} style={{ color: 'white', fontSize: '0.8rem' }}>
+                                <div className={`badge ${item.status === 'Resolved' ? 'bg-green' : 'bg-rose'}`} style={{ color: 'white', fontSize: '0.8rem' }}>
                                     {item.status || 'Pending'}
                                 </div>
                             </div>
