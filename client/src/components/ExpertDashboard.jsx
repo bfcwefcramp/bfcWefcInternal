@@ -137,7 +137,7 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
     // For Editing
     const [editingWeekIndex, setEditingWeekIndex] = useState(null); // If not null, we are editing this index in the currentPlanIndexForModal
 
-    const API_URL = 'http://localhost:5001';
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
     // --- Edit Profile State ---
     const [isEditingProfile, setIsEditingProfile] = useState(false);

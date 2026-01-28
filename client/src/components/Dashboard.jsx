@@ -24,7 +24,8 @@ const Dashboard = () => {
 
     const fetchStats = async () => {
         try {
-            const res = await axios.get('http://localhost:5001/api/msme/stats');
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+            const res = await axios.get(`${API_URL}/api/msme/stats`);
             setStats(res.data);
         } catch (err) {
             console.error('Stats Error:', err);
@@ -33,7 +34,8 @@ const Dashboard = () => {
 
     const fetchRecent = async () => {
         try {
-            const res = await axios.get('http://localhost:5001/api/msme');
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+            const res = await axios.get(`${API_URL}/api/msme`);
             setRecent(res.data.slice(0, 5));
         } catch (err) {
             console.error('Recent Error:', err);

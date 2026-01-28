@@ -19,7 +19,8 @@ const MSMEDetail = () => {
 
     const fetchMSME = async () => {
         try {
-            const res = await axios.get(`http://localhost:5001/api/msme/${id}`);
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+            const res = await axios.get(`${API_URL}/api/msme/${id}`);
             setMsme(res.data);
             setEditForm(res.data);
         } catch (err) {
@@ -39,7 +40,8 @@ const MSMEDetail = () => {
         }
 
         try {
-            await axios.post(`http://localhost:5001/api/msme/${id}/photos`, formData, {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+            await axios.post(`${API_URL}/api/msme/${id}/photos`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             fetchMSME(); // Refresh
@@ -53,7 +55,8 @@ const MSMEDetail = () => {
     const handleDeletePhoto = async (photoUrl) => {
         if (!window.confirm('Are you sure you want to delete this photo?')) return;
         try {
-            await axios.delete(`http://localhost:5001/api/msme/${id}/photos`, {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+            await axios.delete(`${API_URL}/api/msme/${id}/photos`, {
                 data: { photoUrl }
             });
             fetchMSME(); // Refresh
@@ -69,7 +72,8 @@ const MSMEDetail = () => {
 
     const handleSave = async () => {
         try {
-            await axios.put(`http://localhost:5001/api/msme/${id}`, editForm);
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+            await axios.put(`${API_URL}/api/msme/${id}`, editForm);
             setMsme(editForm);
             setIsEditing(false);
             alert('Saved successfully!');
@@ -134,7 +138,8 @@ const MSMEDetail = () => {
                                 <button onClick={async () => {
                                     if (window.confirm('Are you sure you want to delete this MSME record? This action cannot be undone.')) {
                                         try {
-                                            await axios.delete(`http://localhost:5001/api/msme/${id}`);
+                                            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+                                            await axios.delete(`${API_URL}/api/msme/${id}`);
                                             alert('Record deleted successfully');
                                             navigate('/list');
                                         } catch (err) {
@@ -270,30 +275,33 @@ const MSMEDetail = () => {
                         gap: '1rem',
                         marginTop: '1rem'
                     }}>
-                        {validPhotos.map((photo, idx) => (
-                            <div key={idx} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ddd' }}>
-                                <a href={`http://localhost:5001${photo.trim()}`} target="_blank" rel="noreferrer">
-                                    <img
-                                        src={`http://localhost:5001${photo.trim()}`}
-                                        alt={`Upload ${idx}`}
-                                        style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }}
-                                    />
-                                </a>
-                                <button
-                                    onClick={() => handleDeletePhoto(photo)}
-                                    style={{
-                                        position: 'absolute', top: '10px', right: '10px',
-                                        background: 'rgba(220, 38, 38, 0.9)', color: 'white', border: 'none',
-                                        borderRadius: '50%', width: '32px', height: '32px',
-                                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                    }}
-                                    title="Delete Photo"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
-                            </div>
-                        ))}
+                        {validPhotos.map((photo, idx) => {
+                            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+                            return (
+                                <div key={idx} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ddd' }}>
+                                    <a href={`${API_URL}${photo.trim()}`} target="_blank" rel="noreferrer">
+                                        <img
+                                            src={`${API_URL}${photo.trim()}`}
+                                            alt={`Upload ${idx}`}
+                                            style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }}
+                                        />
+                                    </a>
+                                    <button
+                                        onClick={() => handleDeletePhoto(photo)}
+                                        style={{
+                                            position: 'absolute', top: '10px', right: '10px',
+                                            background: 'rgba(220, 38, 38, 0.9)', color: 'white', border: 'none',
+                                            borderRadius: '50%', width: '32px', height: '32px',
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                        }}
+                                        title="Delete Photo"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </div>

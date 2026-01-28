@@ -37,7 +37,8 @@ const Experts = () => {
 
     const fetchExperts = async () => {
         try {
-            const res = await axios.get('http://localhost:5001/api/experts');
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+            const res = await axios.get(`${API_URL}/api/experts`);
             if (res.data.length > 0) {
                 setExperts(res.data);
             } else {
@@ -60,7 +61,8 @@ const Experts = () => {
                 ...newExpert,
                 expertise: newExpert.expertise.split(',').map(s => s.trim())
             };
-            await axios.post('http://localhost:5001/api/experts', expertData);
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+            await axios.post(`${API_URL}/api/experts`, expertData);
             setShowModal(false);
             setNewExpert({ name: '', designation: '', expertise: '', contact: '' });
             fetchExperts(); // Refresh
@@ -84,7 +86,8 @@ const Experts = () => {
 
     const fetchExpertStats = async (expertName) => {
         try {
-            const res = await axios.get(`http://localhost:5001/api/msme/expert-stats/${encodeURIComponent(expertName)}`);
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+            const res = await axios.get(`${API_URL}/api/msme/expert-stats/${encodeURIComponent(expertName)}`);
             setExpertStats(res.data);
         } catch (err) {
             console.error("Error fetching expert stats:", err);
@@ -106,8 +109,9 @@ const Experts = () => {
         try {
             // Sanitize payload: remove _id and __v to avoid immutable field errors
             const { _id, __v, ...updateData } = editForm;
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
-            const res = await axios.put(`http://localhost:5001/api/experts/${selectedExpert._id}`, updateData);
+            const res = await axios.put(`${API_URL}/api/experts/${selectedExpert._id}`, updateData);
 
             // Update local state
             setExperts(experts.map(ex => ex._id === res.data._id ? res.data : ex));
@@ -132,7 +136,8 @@ const Experts = () => {
         }
         if (window.confirm('Are you sure you want to delete this expert?')) {
             try {
-                await axios.delete(`http://localhost:5001/api/experts/${selectedExpert._id}`);
+                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+                await axios.delete(`${API_URL}/api/experts/${selectedExpert._id}`);
                 setExperts(experts.filter(ex => ex._id !== selectedExpert._id));
                 setSelectedExpert(null); // Close modal
             } catch (err) {

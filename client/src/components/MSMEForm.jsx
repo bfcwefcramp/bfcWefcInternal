@@ -47,7 +47,8 @@ const MSMEForm = () => {
     useEffect(() => {
         const fetchExperts = async () => {
             try {
-                const res = await axios.get('http://localhost:5001/api/experts');
+                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+                const res = await axios.get(`${API_URL}/api/experts`);
                 setAllExperts(res.data);
             } catch (err) { console.error(err); }
         };
@@ -121,7 +122,8 @@ const MSMEForm = () => {
         }
 
         try {
-            await axios.post('http://localhost:5001/api/msme', data, {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+            await axios.post(`${API_URL}/api/msme`, data, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             setSuccess(true);

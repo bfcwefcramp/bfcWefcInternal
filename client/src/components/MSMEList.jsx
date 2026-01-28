@@ -56,9 +56,10 @@ const MSMEList = () => {
                 (filters[key] === '' || filters[key] === null) && params.delete(key)
             );
 
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
             const [listRes, statsRes] = await Promise.all([
-                axios.get(`http://localhost:5001/api/msme?${params.toString()}`),
-                axios.get('http://localhost:5001/api/msme/stats')
+                axios.get(`${API_URL}/api/msme?${params.toString()}`),
+                axios.get(`${API_URL}/api/msme/stats`)
             ]);
 
             setMsmes(listRes.data);

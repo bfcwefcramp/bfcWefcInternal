@@ -13,7 +13,8 @@ const Layout = ({ children }) => {
     useEffect(() => {
         const fetchCount = async () => {
             try {
-                const res = await axios.get('http://localhost:5001/api/msme/stats');
+                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+                const res = await axios.get(`${API_URL}/api/msme/stats`);
                 setTotalCount(res.data.total);
             } catch (err) {
                 console.error('Error fetching count:', err);
