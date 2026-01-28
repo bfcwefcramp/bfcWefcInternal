@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import './ExpertDashboard.css';
 
-const ExpertDashboard = ({ expert, onClose, onUpdate, stats }) => {
+const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
     const [activeTab, setActiveTab] = useState('overview');
 
 
@@ -138,6 +138,36 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats }) => {
     const [editingWeekIndex, setEditingWeekIndex] = useState(null); // If not null, we are editing this index in the currentPlanIndexForModal
 
     const API_URL = 'http://localhost:5001';
+
+    // --- Edit Profile State ---
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [editFormData, setEditFormData] = useState({
+        name: '',
+        designation: '',
+        expertise: '',
+        contact: ''
+    });
+
+    const handleEditProfileChange = (e) => {
+        setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
+    };
+
+    const saveProfileChanges = async () => {
+        try {
+            const updatedExpert = {
+                ...expert,
+                name: editFormData.name,
+                designation: editFormData.designation,
+                expertise: editFormData.expertise.split(',').map(s => s.trim()),
+                contact: editFormData.contact
+            };
+            await updateExpertData(updatedExpert);
+            setIsEditingProfile(false);
+        } catch (err) {
+            console.error("Failed to update profile", err);
+            alert("Failed to update profile");
+        }
+    };
 
     // Helper: Sort Plans
     const sortedPlans = (expert.plans || []).sort((a, b) => {
@@ -598,11 +628,79 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats }) => {
                 <div className="dashboard-sidebar">
                     <div>
                         <div className="expert-profile-large">
-                            <div className="avatar-large">
-                                <User />
-                            </div>
-                            <div className="expert-name-large">{expert.name}</div>
-                            <div className="expert-role-large">{expert.designation}</div>
+                            {isEditingProfile ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}>
+                                    <div className="avatar-large">
+                                        <User />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value={editFormData.name}
+                                        onChange={handleEditProfileChange}
+                                        placeholder="Name"
+                                        style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc', width: '100%', textAlign: 'center' }}
+                                    />
+                                    <input
+                                        type="text"
+                                        name="designation"
+                                        value={editFormData.designation}
+                                        onChange={handleEditProfileChange}
+                                        placeholder="Designation"
+                                        style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc', width: '100%', textAlign: 'center', fontSize: '0.8rem' }}
+                                    />
+                                    <input
+                                        type="text"
+                                        name="contact"
+                                        value={editFormData.contact}
+                                        onChange={handleEditProfileChange}
+                                        placeholder="Contact / Email"
+                                        style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc', width: '100%', textAlign: 'center', fontSize: '0.8rem' }}
+                                    />
+                                    <textarea
+                                        name="expertise"
+                                        value={editFormData.expertise}
+                                        onChange={handleEditProfileChange}
+                                        placeholder="Expertise (comma separated)"
+                                        rows={2}
+                                        style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc', width: '100%', textAlign: 'center', fontSize: '0.8rem', resize: 'vertical' }}
+                                    />
+                                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '0.5rem' }}>
+                                        <button onClick={saveProfileChanges} style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Save</button>
+                                        <button onClick={() => setIsEditingProfile(false)} style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: '#e5e7eb', color: '#374151', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="avatar-large">
+                                        <User />
+                                    </div>
+                                    <div className="expert-name-large">{expert.name}</div>
+                                    <div className="expert-role-large">{expert.designation}</div>
+                                    <button
+                                        onClick={() => {
+                                            setEditFormData({
+                                                name: expert.name,
+                                                designation: expert.designation,
+                                                expertise: expert.expertise ? expert.expertise.join(', ') : '',
+                                                contact: expert.contact
+                                            });
+                                            setIsEditingProfile(true);
+                                        }}
+                                        style={{
+                                            marginTop: '0.5rem',
+                                            fontSize: '0.75rem',
+                                            color: '#3b82f6',
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            textDecoration: 'underline'
+                                        }}
+                                    >
+                                        Edit Profile
+                                    </button>
+                                </>
+                            )}
                         </div>
 
                         <nav className="dashboard-nav">
@@ -629,6 +727,29 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats }) => {
 
                     <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>
                         BFC & WEFC Operations<br />Internal Dashboard v1.2
+                    </div>
+
+                    <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                        <button
+                            onClick={onDelete}
+                            style={{
+                                width: '100%',
+                                padding: '0.8rem',
+                                background: 'rgba(239, 68, 68, 0.1)',
+                                color: '#fca5a5',
+                                border: '1px solid rgba(239, 68, 68, 0.2)',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem',
+                                fontSize: '0.9rem',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <X size={16} /> Delete Expert
+                        </button>
                     </div>
                 </div>
 
