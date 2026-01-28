@@ -209,6 +209,7 @@ const Experts = () => {
                         setExperts(experts.map(ex => ex._id === updatedExpert._id ? updatedExpert : ex));
                         setSelectedExpert(updatedExpert);
                     }}
+                    onDelete={handleDeleteExpert}
                 />
             )}
         </div>
