@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const MSME = require('../models/MSME');
+const Expert = require('../models/Expert');
 
 // Configure Multer for file upload
 const storage = multer.diskStorage({
@@ -132,6 +133,17 @@ router.get('/stats', async (req, res) => {
             value: s.count
         }));
 
+        // Performance Stats
+        const experts = await Expert.find();
+        const eventsAttended = experts.reduce((acc, curr) => acc + (curr.stats?.eventsAttended || 0), 0);
+        // Team Initiatives (using momsCreated as proxy)
+        const initiatives = experts.reduce((acc, curr) => acc + (curr.stats?.momsCreated || 0), 0);
+
+        // Udyam Registrations (Count where field exists and is not empty)
+        const udyamRegistrations = await MSME.countDocuments({
+            udyamRegistrationNo: { $exists: true, $ne: '', $not: { $regex: /^\s*$/ } }
+        });
+
         res.json({
             total,
             resolved,
@@ -142,7 +154,12 @@ router.get('/stats', async (req, res) => {
                 { name: 'Unknown', value: unknownArea } // Optional to show
             ],
             sector: sectorStats,
-            sectorRaw: sectorStatsRaw
+            sectorRaw: sectorStatsRaw,
+            performance: [
+                { name: 'Udyam Reg.', value: udyamRegistrations, fill: '#8884d8' },
+                { name: 'Team Initiatives', value: initiatives, fill: '#82ca9d' },
+                { name: 'Events', value: eventsAttended, fill: '#ffc658' }
+            ]
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
