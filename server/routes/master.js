@@ -60,11 +60,23 @@ router.get('/expert/:expertName', async (req, res) => {
             .sort({ date: -1 })
             .select('eventName date category udyamRegistrationNo businessName remarks agenda venue');
 
-        // MOMs: Fetch specifically categorized MoMs OR those with keywords
-        const moms = records.filter(r =>
-            r.category === 'MoM' ||
-            (r.remarks && (r.remarks.toLowerCase().includes('mom') || r.remarks.toLowerCase().includes('minutes')))
-        );
+        // MOMs: Fetch broader set of activities for the Timeline
+        // User requested "Event Exhibitions" and "Departmental Visits" to be included.
+        // We will include explicitly categorized MoMs, plus Events, Workshops, and Visits.
+        const moms = records.filter(r => {
+            const cat = (r.category || '').toLowerCase();
+            const rem = (r.remarks || '').toLowerCase();
+            const name = (r.eventName || '').toLowerCase();
+
+            // Explicit MoM category or keywords
+            if (cat === 'mom' || rem.includes('mom') || rem.includes('minutes')) return true;
+
+            // Also include Major Activities in the Timeline
+            if (cat === 'event' || cat === 'workshop' || cat === 'exhibition' || cat === 'visit') return true;
+            if (name.includes('exhibition') || name.includes('visit') || name.includes('delegation')) return true;
+
+            return false;
+        });
 
         // Count Udyam done by this expert (Restored)
         const udyamCount = await MasterRecord.countDocuments({
@@ -80,25 +92,120 @@ router.get('/expert/:expertName', async (req, res) => {
             workshopsCount: workshopsAttended.length,
             eventNames: eventsAttended,
             workshopNames: workshopsAttended,
-            recentActivity: records.slice(0, 10),
+            recentActivity: records.slice(0, 10), // Preserves date: -1 sort (Newest First)
             moms: moms,
 
-            // New: Udyam Source Distribution
-            udyamSourceDistribution: (() => {
-                const dist = { 'Walk-in': 0, 'Camp/Event': 0, 'Other': 0 };
+            // New: Participation Distribution (Events, Workshops, Visits)
+            participationDistribution: (() => {
+                const dist = { 'Events': 0, 'Workshops': 0, 'Walk-ins/Visits': 0 };
                 records.forEach(r => {
-                    if (r.udyamRegistrationNo) {
-                        const rem = (r.remarks || '').toLowerCase();
-                        if (rem.includes('walk') || rem.includes('office')) {
-                            dist['Walk-in']++;
-                        } else if (rem.includes('tsm') || rem.includes('camp') || rem.includes('workshop') || rem.includes('event')) {
-                            dist['Camp/Event']++;
-                        } else {
-                            dist['Other']++;
-                        }
+                    const cat = (r.category || '').toLowerCase();
+                    const name = (r.eventName || '').toLowerCase();
+                    const rem = (r.remarks || '').toLowerCase();
+
+                    if (cat === 'workshop' || name.includes('workshop') || rem.includes('workshop')) {
+                        dist['Workshops']++;
+                    } else if (cat === 'event' || cat === 'mom' || name.includes('event') || name.includes('exhibition')) {
+                        dist['Events']++;
+                    } else {
+                        dist['Walk-ins/Visits']++;
                     }
                 });
                 return Object.entries(dist).map(([name, value]) => ({ name, value }));
+            })(),
+
+            // New: Udyam count based on Category OR udyamRegistrationNo
+            udyamCount: records.filter(r =>
+                (r.category === 'Udyam') ||
+                (r.udyamRegistrationNo && r.udyamRegistrationNo.length > 0)
+            ).length,
+
+            participationDistribution: (() => {
+                const dist = { 'Events': 0, 'Workshops': 0, 'Walk-ins/Visits': 0 };
+                records.forEach(r => {
+                    const cat = (r.category || '').toLowerCase();
+                    const name = (r.eventName || '').toLowerCase();
+                    const rem = (r.remarks || '').toLowerCase();
+
+                    // Don't count Udyam as typical Event unless explicit
+                    if (cat === 'udyam') return;
+
+                    if (cat === 'workshop' || name.includes('workshop') || rem.includes('workshop')) {
+                        dist['Workshops']++;
+                    } else if (cat === 'event' || cat === 'mom' || cat === 'exhibition' || name.includes('event') || name.includes('exhibition')) {
+                        dist['Events']++;
+                    } else {
+                        dist['Walk-ins/Visits']++;
+                    }
+                });
+                return Object.entries(dist).map(([name, value]) => ({ name, value }));
+            })(),
+
+            // New: Udyam Source Distribution (Walk-in vs Event) based on classification
+            udyamSourceDistribution: (() => {
+                const dist = { 'Walk-in': 0, 'Camp/Event': 0 };
+                const udyamRecords = records.filter(r =>
+                    (r.category === 'Udyam') ||
+                    (r.udyamRegistrationNo && r.udyamRegistrationNo.length > 0)
+                );
+
+                udyamRecords.forEach(r => {
+                    const rem = (r.remarks || '').toLowerCase();
+                    if (rem.includes('tsm') || rem.includes('camp') || rem.includes('workshop') || rem.includes('event')) {
+                        dist['Camp/Event']++;
+                    } else {
+                        // Default to Walk-in
+                        dist['Walk-in']++;
+                    }
+                });
+                return Object.entries(dist).map(([name, value]) => ({ name, value }));
+            })(),
+
+            // Full Udyam Lists for Modal
+            udyamRecords: records.filter(r =>
+                (r.category === 'Udyam') ||
+                (r.udyamRegistrationNo && r.udyamRegistrationNo.length > 0)
+            ).sort((a, b) => new Date(b.date) - new Date(a.date)),
+
+            // New: Attendance Stats (Unique Days per Month)
+            attendanceStats: (() => {
+                const grouped = {};
+                records.forEach(r => {
+                    if (!r.date) return;
+                    const d = new Date(r.date);
+                    const key = `${d.toLocaleString('default', { month: 'long' })} ${d.getFullYear()}`; // e.g., "January 2024"
+                    const dayKey = d.toDateString(); // Unique day
+
+                    if (!grouped[key]) grouped[key] = new Set();
+                    grouped[key].add(dayKey);
+                });
+
+                const history = Object.entries(grouped).map(([month, daysSet]) => ({
+                    month,
+                    days: daysSet.size
+                }));
+
+                // Sort history by date (parse month/year)
+                history.sort((a, b) => new Date(b.month + ' 1') - new Date(a.month + ' 1'));
+
+                // Get "Last Month" count (Previous month relative to now, or just the most recent entry if logic requires)
+                // User said "last month". Let's get the most recent completed month or the current one if active.
+                // Let's just take the most recent entry from history as the "Latest Attendance"
+                const latest = history[0] || { month: 'N/A', days: 0 };
+
+                // Try to find specifically the *previous* month if possible, but fallback to latest
+                const now = new Date();
+                const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                const prevMonthName = `${prevMonthDate.toLocaleString('default', { month: 'long' })} ${prevMonthDate.getFullYear()}`;
+                const lastMonthEntry = history.find(h => h.month === prevMonthName);
+
+                return {
+                    history,
+                    lastMonthLabel: prevMonthName,
+                    lastMonthCount: lastMonthEntry ? lastMonthEntry.days : 0,
+                    latestLabel: latest.month,
+                    latestCount: latest.days
+                };
             })()
         });
 

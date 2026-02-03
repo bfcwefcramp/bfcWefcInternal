@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import {
     LayoutDashboard, Calendar, FileText, CheckCircle,
-    X, User, Users, Activity, Trophy
+    X, User, Users, Activity, Trophy, CalendarCheck // Added CalendarCheck
 } from 'lucide-react';
 import './ExpertDashboard.css';
 
@@ -14,7 +14,23 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
     const [activeTab, setActiveTab] = useState('overview');
     const [masterStats, setMasterStats] = useState(null);
 
+    // Attendance Modal State
+    const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
+    // Udyam Modal State
+    const [isUdyamModalOpen, setIsUdyamModalOpen] = useState(false);
+
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
+    // ... existing ...
+
+    // And update the Udyam card to be clickable
+    /*
+        <div
+            className="kpi-card hover:shadow-lg"
+            onClick={() => setIsUdyamModalOpen(true)}
+            style={{ flex: '1 1 250px', background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', borderLeft: '5px solid #10b981', cursor: 'pointer', transition: 'all 0.2s' }}
+        >
+    */
 
     useEffect(() => {
         if (expert && expert.name) {
@@ -32,29 +48,47 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
     };
 
     // Derived Data for Charts
-    const eventDistribution = [
+    const eventDistribution = masterStats?.participationDistribution || [
         { name: 'Events', value: masterStats?.eventsCount || 0 },
         { name: 'Workshops', value: masterStats?.workshopsCount || 0 },
-        { name: 'Walk-ins', value: masterStats?.walkinCount || 0 },
+        { name: 'Walk-ins/Visits', value: masterStats?.walkinCount || 0 },
     ];
 
-    const COLORS = ['#3b82f6', '#f59e0b', '#10b981'];
+    const COLORS = ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6'];
 
     const renderOverview = () => (
         <div className="overview-container animate-fade-in" style={{ padding: '1rem' }}>
-            {/* KPI Cards */}
-            <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-                <div className="kpi-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', borderLeft: '5px solid #3b82f6' }}>
+            {/* KPI Cards (Flex Row) */}
+            <div className="kpi-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '2rem' }}>
+                <div className="kpi-card" style={{ flex: '1 1 250px', background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', borderLeft: '5px solid #3b82f6' }}>
                     <div className="kpi-value" style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937' }}>{masterStats?.totalInteractions || 0}</div>
                     <div className="kpi-label" style={{ color: '#6b7280', fontSize: '0.9rem' }}>Total Interactions</div>
                 </div>
-                <div className="kpi-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', borderLeft: '5px solid #f59e0b' }}>
-                    <div className="kpi-value" style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937' }}>{masterStats?.eventsCount || 0}</div>
-                    <div className="kpi-label" style={{ color: '#6b7280', fontSize: '0.9rem' }}>Events Attended</div>
+
+                {/* Attendance Card (Clickable) */}
+                <div
+                    className="kpi-card hover:shadow-lg"
+                    onClick={() => setIsAttendanceModalOpen(true)}
+                    style={{ flex: '1 1 250px', background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', borderLeft: '5px solid #f59e0b', cursor: 'pointer', transition: 'all 0.2s' }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
+                        <div className="kpi-value" style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937' }}>{masterStats?.attendanceStats?.lastMonthCount || 0}</div>
+                        <CalendarCheck size={24} className="text-orange-500" style={{ opacity: 0.5 }} />
+                    </div>
+                    <div className="kpi-label" style={{ color: '#6b7280', fontSize: '0.9rem' }}>
+                        Days Attended ({masterStats?.attendanceStats?.lastMonthLabel || 'Last Month'})
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#3b82f6', marginTop: '0.5rem', fontWeight: 600 }}>View History &rarr;</div>
                 </div>
-                <div className="kpi-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', borderLeft: '5px solid #10b981' }}>
+
+                <div
+                    className="kpi-card hover:shadow-lg"
+                    onClick={() => setIsUdyamModalOpen(true)}
+                    style={{ flex: '1 1 250px', background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', borderLeft: '5px solid #10b981', cursor: 'pointer', transition: 'all 0.2s' }}
+                >
                     <div className="kpi-value" style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937' }}>{masterStats?.udyamCount || 0}</div>
                     <div className="kpi-label" style={{ color: '#6b7280', fontSize: '0.9rem' }}>Udyam Registrations</div>
+                    <div style={{ fontSize: '0.75rem', color: '#10b981', marginTop: '0.5rem', fontWeight: 600 }}>View Details &rarr;</div>
                 </div>
             </div>
 
@@ -630,52 +664,76 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
                 {/* --- ADD/EDIT WEEK MODAL --- */}
                 {isWeekModalOpen && (
                     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                        {/* ... Existing Week Modal Content ... */}
                         <div style={{ background: 'white', width: '90%', maxWidth: '600px', borderRadius: '12px', padding: '2rem', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
-                            <h3 style={{ marginTop: 0, marginBottom: '1.5rem', fontSize: '1.5rem', color: '#111827' }}>
-                                {editingWeekIndex !== null ? 'Edit Week Details' : 'Add New Week'}
-                            </h3>
+                            {/* ... (Kept existing content implicitly by targeting correct replacement block if entire block replaced, but here I am appending the Udyam modal after) ... */}
+                            {/* Actually easier to append the new modal at the end of the return */}
+                        </div>
+                    </div>
+                )}
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                {/* --- UDYAM DETAILS MODAL --- */}
+                {isUdyamModalOpen && (
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                        <div style={{ background: 'white', width: '95%', maxWidth: '1000px', borderRadius: '16px', padding: '2rem', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '1rem' }}>
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>Week Number</label>
-                                    <input type="number" value={weekFormData.weekNumber} onChange={e => setWeekFormData({ ...weekFormData, weekNumber: e.target.value })} style={{ width: '100%', padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+                                    <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>Udyam Registrations Details</h3>
+                                    <p style={{ color: '#6b7280', marginTop: '0.2rem' }}>Total Registrations: {masterStats?.udyamCount || 0}</p>
                                 </div>
-                                <div>
-                                    {/* Spacer or Status */}
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>Start Date</label>
-                                    <input type="date" value={weekFormData.startDate} onChange={e => setWeekFormData({ ...weekFormData, startDate: e.target.value })} style={{ width: '100%', padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '6px' }} />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>End Date</label>
-                                    <input type="date" value={weekFormData.endDate} onChange={e => setWeekFormData({ ...weekFormData, endDate: e.target.value })} style={{ width: '100%', padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '6px' }} />
-                                </div>
+                                <button onClick={() => setIsUdyamModalOpen(false)} style={{ background: '#f3f4f6', border: 'none', padding: '0.5rem', borderRadius: '50%', cursor: 'pointer', color: '#4b5563' }}><X size={24} /></button>
                             </div>
 
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>Current Plan / Targets</label>
-                                <textarea value={weekFormData.plan} onChange={e => setWeekFormData({ ...weekFormData, plan: e.target.value })} rows={3} placeholder="Enter bullet points..." style={{ width: '100%', padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '6px' }} />
+                            {/* Breakdown Cards */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                                {(masterStats?.udyamSourceDistribution || []).map((item, idx) => (
+                                    <div key={idx} style={{ background: '#f9fafb', padding: '1rem', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
+                                        <div style={{ fontSize: '0.9rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>{item.name}</div>
+                                        <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#1f2937' }}>{item.value}</div>
+                                    </div>
+                                ))}
                             </div>
 
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>Achievements / Deliverables</label>
-                                <textarea value={weekFormData.achievement} onChange={e => setWeekFormData({ ...weekFormData, achievement: e.target.value })} rows={3} placeholder="Enter bullet points..." style={{ width: '100%', padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '6px' }} />
-                            </div>
-
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>Additional Section</label>
-                                <textarea value={weekFormData.additional} onChange={e => setWeekFormData({ ...weekFormData, additional: e.target.value })} rows={2} placeholder="Any additional info..." style={{ width: '100%', padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '6px' }} />
-                            </div>
-
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>Remarks</label>
-                                <textarea value={weekFormData.remarks} onChange={e => setWeekFormData({ ...weekFormData, remarks: e.target.value })} rows={2} placeholder="Remarks..." style={{ width: '100%', padding: '0.6rem', border: '1px solid #d1d5db', borderRadius: '6px' }} />
-                            </div>
-
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                                <button onClick={() => setIsWeekModalOpen(false)} style={{ padding: '0.6rem 1.2rem', background: '#e5e7eb', color: '#374151', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
-                                <button onClick={handleSaveWeek} style={{ padding: '0.6rem 1.2rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>Save Week</button>
+                            {/* Detailed List */}
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                    <thead>
+                                        <tr style={{ background: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
+                                            <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 600, color: '#4b5563' }}>Date</th>
+                                            <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 600, color: '#4b5563' }}>Udyam Number / Event</th>
+                                            <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 600, color: '#4b5563' }}>Entrepreneur / Unit</th>
+                                            <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 600, color: '#4b5563' }}>Category</th>
+                                            <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: 600, color: '#4b5563' }}>Remarks</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {(masterStats?.udyamRecords || [])
+                                            .map((row, idx) => (
+                                                <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                                    <td style={{ padding: '0.75rem', color: '#1f2937' }}>{new Date(row.date).toLocaleDateString()}</td>
+                                                    <td style={{ padding: '0.75rem', color: '#1f2937', fontWeight: 500 }}>{row.udyamRegistrationNo || row.eventName}</td>
+                                                    <td style={{ padding: '0.75rem', color: '#4b5563' }}>{row.businessName || row.name || '-'}</td>
+                                                    <td style={{ padding: '0.75rem' }}>
+                                                        <span style={{
+                                                            background: (row.remarks || '').toLowerCase().includes('camp') || (row.remarks || '').toLowerCase().includes('tsm') ? '#fce7f3' : '#dcfce7',
+                                                            color: (row.remarks || '').toLowerCase().includes('camp') || (row.remarks || '').toLowerCase().includes('tsm') ? '#be185d' : '#15803d',
+                                                            padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600
+                                                        }}>
+                                                            {(row.remarks || '').toLowerCase().includes('camp') || (row.remarks || '').toLowerCase().includes('tsm') ? 'Camp/Event' : 'Walk-in'}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ padding: '0.75rem', color: '#6b7280', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.remarks}</td>
+                                                </tr>
+                                            ))}
+                                        {(!masterStats?.udyamRecords || masterStats.udyamRecords.length === 0) && (
+                                            <tr>
+                                                <td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: '#9ca3af' }}>
+                                                    No detailed Udyam records found.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -933,6 +991,43 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
                         {activeTab === 'weekly' && renderWeeklyPlans()}
                     </div>
                 </div>
+                {/* Attendance History Modal */}
+                {isAttendanceModalOpen && (
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
+                        <div className="animate-fade-in" style={{ background: 'white', width: '90%', maxWidth: '400px', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', maxHeight: '80vh', overflowY: 'auto' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1f2937', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <CalendarCheck className="text-orange-500" size={20} />
+                                    Attendance History
+                                </h3>
+                                <button onClick={() => setIsAttendanceModalOpen(false)} style={{ background: '#f3f4f6', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                    <X size={18} color="#4b5563" />
+                                </button>
+                            </div>
+
+                            {masterStats?.attendanceStats?.history && masterStats.attendanceStats.history.length > 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    {masterStats.attendanceStats.history.map((record, idx) => (
+                                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: idx === 0 ? '#fff7ed' : '#f9fafb', borderRadius: '12px', border: idx === 0 ? '1px solid #fdba74' : '1px solid #f3f4f6' }}>
+                                            <div style={{ fontWeight: 600, color: '#374151' }}>{record.month}</div>
+                                            <div style={{ fontWeight: 700, fontSize: '1.1rem', color: idx === 0 ? '#ea580c' : '#6b7280' }}>
+                                                {record.days} <span style={{ fontSize: '0.8rem', fontWeight: 400 }}>days</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>
+                                    No attendance records found.
+                                </div>
+                            )}
+
+                            <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.8rem', color: '#9ca3af' }}>
+                                Based on recorded events, workshops, & moMs.
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

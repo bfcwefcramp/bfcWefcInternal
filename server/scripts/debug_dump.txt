@@ -1,0 +1,58 @@
+EXPERT KEYS:
+[
+  "yogesh kumar",
+  "yogesh",
+  "sanket ganpat desai",
+  "sanket",
+  "ferdin sylvester",
+  "ferdin",
+  "roshan kumar jha",
+  "roshan",
+  "smitha r raikar",
+  "smitha",
+  "jatin gahlot",
+  "jatin",
+  "megha dalal",
+  "megha",
+  "navyateja cheerladinne",
+  "navyateja",
+  "pradip nagargoje",
+  "pradip",
+  "shreya naik",
+  "shreya",
+  "shreyas raikar",
+  "shreyas",
+  "nikita kumari ",
+  "nikita",
+  "mayuri patil",
+  "mayuri",
+  "manasi v kowadkar",
+  "manasi"
+]
+
+SHEET DATA (Officials Column Index 3):
+Row 1: [undefined]
+Row 2: [undefined]
+Row 3: [undefined]
+Row 4: [undefined]
+Row 5: [Nerul]
+Row 6: [Mapusa]
+Row 7: [Moira]
+Row 8: [Trimurti Hall, Mapusa]
+Row 9: [Pissurlem IDC]
+Row 10: [Madkai IDC]
+Row 11: [Thivim Industrial Estates]
+Row 12: [Colvale Industrial Estates]
+Row 13: [Art and Culture Department, Patto Panaji]
+Row 14: [Cidade De Goa]
+Row 15: [South Goa]
+Row 16: [undefined]
+Row 17: [Grace Church Hall Pajifond Margao, South Goa]
+Row 18: [undefined]
+Row 19: [Porvorim ]
+Row 20: [undefined]
+Row 21: [Don Bosco Panaji]
+Row 22: [undefined]
+Row 23: [undefined]
+Row 24: [undefined]
+Row 25: [undefined]

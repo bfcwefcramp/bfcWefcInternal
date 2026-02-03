@@ -1,0 +1,8 @@
+SHEET: Compiled Data
+
+ROW 0: ["Basic Details",null,null,null,null,null,null,null,null,"Business Information",null,null,null,null,"Address Details",null,null,null,null,"Registration Tracking"]
+ROW 1: ["Sr. No. ","Assigned Expert","Name of Entreprenuer","Business Name/Enterprise Name","Type of Organization (prop/LLP,Pvt Ltd etc)","Gender","Category","Mobile No","Type of Business","Nature Of Business/Activity Type","Main Product/Activity","Number Of Employees","Annual Turnover","Date of Commencement","Business Address","District","Taluka/Block","Village/Town","Pin Code","Udyam Registration Number","Date Of Registration","SHG Name*","Remarks/Comments"]
+ROW 2: [1,"Sanket Desai","Arti Desai","Swami Samarth Stores","Proprietory","Female","General",7798797776,"Micro","Trading","Retail trade",2,60000,44288,"House no. 128, Mainwada, Corgao","North Goa","Pernem","Corgao",403512,"UDYAM-GA-01-0048530",45939,null,"TSM"]
+ROW 3: [2,"Sanket Desai","Bhagyashree Pednekar","Bhagyashree Homemade Foods","Proprietory","Female","OBC","NA","Micro","Manufacturing","Bakery Products",1,"NA",45934,"House no. 638, Madhlamaj, Corgao","North Goa","Pernem","Corgao",403512,"UDYAM-GA-01-0048467",45938,null,"TSM"]
+ROW 4: [3,"Sanket Desai","Jaya Shirodkar","Bandeshwar Foods","Proprietory","Female","General",9405477294,"Micro","Manufacturing","Bakery Products",1,0,45931,"House no. 233, Manshiwada, Corgao","North Goa","Pernem","Corgao",403512,"UDYAM-GA-01-0048542",45939,null,"TSM"]
+ROW 5: [4,"Sanket Desai","Jayashri Gawade","Jaya Enterprises","Proprietory","Female","General",7588660781,"Micro","Manufacturing","NA",1,15000,45386,"House no. 362, Bhalkhajan, Corgao","North Goa","Pernem","Corgao",403512,"UDYAM-GA-01-0048552",45939,null,"TSM"]

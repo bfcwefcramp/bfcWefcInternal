@@ -1,124 +1,133 @@
 const mongoose = require('mongoose');
 const XLSX = require('xlsx');
 const path = require('path');
-const MasterRecord = require('../models/MasterRecord');
 const Expert = require('../models/Expert');
-const fs = require('fs');
+const MasterRecord = require('../models/MasterRecord');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://admin:admin@cluster0.6g0ahpm.mongodb.net/bfcwefc?retryWrites=true&w=majority";
 
-const importUdyamData = async () => {
+const importUdyam = async () => {
     try {
         await mongoose.connect(MONGODB_URI);
         console.log('MongoDB Connected');
 
-        // 1. Fetch Experts for matching (to normalize name)
+        // 1. Build Expert Map
         const experts = await Expert.find({});
         const expertMap = {};
         experts.forEach(e => {
             if (!e.name) return;
-            expertMap[e.name.toLowerCase()] = e.name;
+            const fullName = e.name.toLowerCase();
+            expertMap[fullName] = e.name;
+
+            // Map first name too
             const parts = e.name.trim().split(' ');
-            if (parts.length > 0) expertMap[parts[0].toLowerCase()] = e.name;
+            if (parts.length > 0) {
+                const firstName = parts[0].toLowerCase();
+                // Prefer exact match if collision, but here usually unique enough
+                if (!expertMap[firstName] || expertMap[firstName].length > e.name.length) {
+                    expertMap[firstName] = e.name;
+                }
+            }
         });
 
-        const findExpert = (text) => {
-            if (!text) return null;
-            const lower = text.trim().toLowerCase();
-            if (expertMap[lower]) return expertMap[lower];
-
-            for (const key of Object.keys(expertMap)) {
-                if (lower.includes(key)) return expertMap[key];
-            }
-            return text; // Return raw text if no match (e.g. "Self")
-        };
-
-        // 2. Read Excel
-        const filePath = path.join(__dirname, '../../Compiled Udyam Registration Data - BFC Team.xlsx');
-        if (!fs.existsSync(filePath)) throw new Error('File not found');
-
+        // 2. Read Sheet
+        const filePath = path.join('c:/Users/DITC/Desktop/bfcWefcBackedupV1.1/bfcWefcInternal', 'Compiled Udyam Registration Data - BFC Team.xlsx');
         const workbook = XLSX.readFile(filePath);
-        // Use the second sheet (index 1) which contains details
-        const sheetName = workbook.SheetNames[1];
-        const sheet = workbook.Sheets[sheetName];
+        const detailedSheetName = workbook.SheetNames[1]; // Index 1
+        console.log(`Processing Sheet: ${detailedSheetName}`);
+
+        const sheet = workbook.Sheets[detailedSheetName];
         const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-        console.log(`Processing Sheet: ${sheetName}, Rows: ${rawData.length}`);
-
-        // Column Mapping (0-indexed) based on inspection
-        // 1: Assigned Expert
-        // 2: Name of Entrepreneur
-        // 3: Business Name
-        // 4: Org Type
-        // 5: Gender
-        // 7: Mobile
-        // 14: Address
-        // 15: District
-        // 16: Taluka
-        // 19: Udyam No
-        // 20: Date of Reg
-        // 22: Remarks
-
         const recordsToInsert = [];
-        let importedCount = 0;
 
-        // Skip Headers (Rows 0 and 1)
+        // 3. Iterate Rows (Skip Row 0 & 1 which are headers)
         for (let i = 2; i < rawData.length; i++) {
             const row = rawData[i];
             if (!row || row.length < 2) continue;
 
-            const expertRaw = (row[1] || '').toString();
-            const expertName = findExpert(expertRaw);
+            // Map Columns
+            const assignedExpert = (row[1] || '').toString().trim();
+            const entrepreneurName = (row[2] || '').toString();
+            const unitName = (row[3] || '').toString();
+            const udyamNo = (row[19] || '').toString();
+            const dateRaw = row[20];
+            const comments = (row[22] || '').toString();
 
-            // Date Conversion
-            let dateVal = row[20];
-            let parsedDate = new Date();
-            if (dateVal) {
-                if (typeof dateVal === 'number') {
-                    parsedDate = new Date(Math.round((dateVal - 25569) * 86400 * 1000));
-                } else {
-                    const d = new Date(dateVal);
-                    if (!isNaN(d.getTime())) parsedDate = d;
-                }
+            if (!assignedExpert) continue;
+
+            // Match Expert
+            const expertKey = assignedExpert.toLowerCase();
+            let matchedExpertName = null;
+
+            // Direct lookup or partial
+            if (expertMap[expertKey]) {
+                matchedExpertName = expertMap[expertKey];
+            } else {
+                // Try contains
+                const foundKey = Object.keys(expertMap).find(k => expertKey.includes(k));
+                if (foundKey) matchedExpertName = expertMap[foundKey];
             }
 
-            recordsToInsert.push({
-                expertName: expertName || 'Unassigned',
-                name: row[2] || '', // Visitor Name
-                businessName: row[3] || '',
-                enterpriseType: row[4] || '',
-                gender: row[5] || '',
-                contactNumber: row[7] || '',
-                mobile: row[7] || '',
-                address: row[14] || '',
-                district: row[15] || '',
-                taluka: row[16] || '',
-                udyamRegistrationNo: row[19] || '',
+            if (!matchedExpertName) {
+                // console.log(`Skipping row ${i}: Expert '${assignedExpert}' not found.`);
+                continue;
+            }
+
+            // Parse Date
+            let parsedDate = new Date(); // Default now
+            if (dateRaw && typeof dateRaw === 'number') {
+                parsedDate = new Date(Math.round((dateRaw - 25569) * 86400 * 1000));
+            } else if (dateRaw) {
+                const d = new Date(dateRaw);
+                if (!isNaN(d.getTime())) parsedDate = d;
+            }
+
+            // check duplication? 
+            // We assume bulk import. If we run this multiple times, we might duplicate.
+            // But user asked to restore missing data. We can delete existing 'Udyam' category matches?
+            // Safer to just insert for now. Or check if exists.
+
+            // Construct Record
+            const record = {
+                expertName: matchedExpertName,
+                eventName: `Udyam Registration: ${udyamNo}`,
+                category: 'Udyam',
                 date: parsedDate,
-                remarks: row[22] || '',
-                category: 'Udyam Registration',
-                eventName: 'Udyam Drive', // Generic event name for grouping
+                remarks: `Beneficiary: ${entrepreneurName}, Unit: ${unitName}. ${comments}`,
                 createdAt: new Date()
-            });
-            importedCount++;
+            };
+
+            recordsToInsert.push(record);
         }
 
-        // We append, not delete, assuming MasterData might have other stuff?
-        // Actually user said "update dashboard... using THIS file". 
-        // If we duplicate, stats go wild. 
-        // Strategy: Delete records with category='Udyam Registration' first.
-        await MasterRecord.deleteMany({ category: 'Udyam Registration' });
-        console.log('Cleared old Udyam Registration records.');
+        console.log(`Found ${recordsToInsert.length} Udyam records to insert.`);
 
-        await MasterRecord.insertMany(recordsToInsert);
-        console.log(`Successfully imported ${importedCount} Udyam records.`);
+        if (recordsToInsert.length > 0) {
+            // Optional: Clear existing Udyams before inserting to avoid duplicates?
+            // const deleteResult = await MasterRecord.deleteMany({ category: 'Udyam' });
+            // console.log(`Deleted ${deleteResult.deletedCount} existing Udyam records.`);
+
+            // User query: "Why have you removed..." implies they are gone.
+            // If I delete, I ensure clean state. Since this file seems to be the "Compiled" source of truth, it's safer to RELOAD it all.
+            // But let's be careful not to delete manual entries if any.
+            // Given the file name "Compiled...", it's likely the master list.
+
+            // Let's delete only those that match 'Udyam' category to avoid dupes from previous imports
+            await MasterRecord.deleteMany({ category: 'Udyam' });
+            console.log("Cleared existing Udyam records.");
+
+            await MasterRecord.insertMany(recordsToInsert);
+            console.log("Inserted successfully.");
+        }
 
         process.exit(0);
+
     } catch (err) {
-        console.error('Import Error:', err);
+        console.error(err);
         process.exit(1);
     }
 };
 
-importUdyamData();
+importUdyam();
