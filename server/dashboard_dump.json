@@ -1,0 +1,375 @@
+[
+  [
+    "Total Unique Beneficiaries (Till Date)",
+    null,
+    null,
+    "Interventions with MSME's",
+    null,
+    null,
+    "Gender wise Break-up - Financial Quarters"
+  ],
+  [
+    "Gender",
+    "Count",
+    null,
+    "Interventions",
+    "Count",
+    null,
+    "Particulars",
+    "Quarter wise"
+  ],
+  [
+    "Female",
+    1263,
+    null,
+    "General Facilitation/Awareness & Outreach",
+    1336,
+    null,
+    null,
+    "25-26",
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    "Grand Total"
+  ],
+  [
+    "Male",
+    117,
+    null,
+    "MSME Formalisation/Udyam registration",
+    68,
+    null,
+    null,
+    "Q1",
+    "Q2",
+    "Q3",
+    null,
+    "Q4"
+  ],
+  [
+    "Others",
+    1,
+    null,
+    "SHG Formalisation/Udyam",
+    385,
+    null,
+    "",
+    "Female",
+    "Female",
+    "Female",
+    "Male",
+    "Female",
+    "Male",
+    "Others"
+  ],
+  [
+    "Grand Total",
+    1376,
+    null,
+    "TEAM Initiative Registration",
+    62,
+    null,
+    "BFC",
+    122,
+    118,
+    780,
+    89,
+    165,
+    28,
+    null,
+    1239
+  ],
+  [
+    null,
+    null,
+    null,
+    "ZED Facilitation",
+    19,
+    null,
+    "WEFC",
+    null,
+    null,
+    150,
+    null,
+    13,
+    null,
+    1,
+    163
+  ],
+  [
+    "DITC Walk-Ins - Unique",
+    null,
+    null,
+    "Grand Total",
+    1870,
+    null,
+    "Grand Total",
+    122,
+    118,
+    906,
+    89,
+    177,
+    28,
+    1,
+    1376
+  ],
+  [
+    "Event Name",
+    "Walk-ins"
+  ],
+  [
+    null,
+    null,
+    null,
+    "Domain Support Provided",
+    null,
+    null,
+    "Social Category Break-up - Financial Quarters"
+  ],
+  [
+    "DITC Walk-Ins",
+    null,
+    null,
+    "Access To finance",
+    25,
+    null,
+    "Particulars",
+    "Quarter wise"
+  ],
+  [
+    72,
+    null,
+    null,
+    "Marketing Assistance",
+    89,
+    null,
+    null,
+    "25-26",
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    "Grand Total"
+  ],
+  [
+    null,
+    null,
+    null,
+    "Export Assistance",
+    11,
+    null,
+    null,
+    "Q1",
+    null,
+    null,
+    null,
+    "Q2",
+    null,
+    null,
+    null,
+    "Q3",
+    null,
+    null,
+    null,
+    "Q4"
+  ],
+  [
+    "Total Unique Beneficiaries (BFC/WEFC)",
+    null,
+    null,
+    "Formalisation Support",
+    453,
+    null,
+    "Row Labels",
+    "General",
+    "OBC",
+    "SC",
+    "ST",
+    "General",
+    "OBC",
+    "SC",
+    "ST",
+    "General",
+    "OBC",
+    "SC",
+    "ST",
+    "General",
+    "OBC",
+    "SC",
+    "ST"
+  ],
+  [
+    "Particulars",
+    "Count",
+    null,
+    "Business Development Support",
+    10,
+    null,
+    "BFC",
+    87,
+    27,
+    7,
+    1,
+    106,
+    7,
+    3,
+    2,
+    537,
+    109,
+    17,
+    237,
+    100,
+    73,
+    5,
+    17,
+    1239
+  ],
+  [
+    "BFC",
+    null,
+    null,
+    "Information regarding Govt Schemes",
+    39,
+    null,
+    "WEFC",
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    120,
+    25,
+    5,
+    null,
+    11,
+    2,
+    null,
+    1,
+    163
+  ],
+  [
+    "Female",
+    1126,
+    null,
+    "Support for Compliances and Certifications",
+    21,
+    null,
+    "Grand Total",
+    87,
+    27,
+    7,
+    1,
+    106,
+    7,
+    3,
+    2,
+    645,
+    131,
+    22,
+    237,
+    110,
+    75,
+    5,
+    18,
+    1376
+  ],
+  [
+    "Male",
+    117,
+    null,
+    "Facilitation in Tender Participation",
+    1
+  ],
+  [
+    "WEFC",
+    null,
+    null,
+    "ESG Assistance",
+    4
+  ],
+  [
+    "Female",
+    162,
+    null,
+    "Any Other Support",
+    6
+  ],
+  [
+    "Others",
+    1
+  ],
+  [
+    "Grand Total",
+    1376
+  ],
+  [],
+  [
+    "Quarter-wise seggregation - Female"
+  ],
+  [
+    "Gender",
+    "Female"
+  ],
+  [],
+  [
+    "",
+    "Count"
+  ],
+  [
+    "BFC"
+  ],
+  [
+    "25-26"
+  ],
+  [
+    "Q1",
+    122
+  ],
+  [
+    "Q2",
+    118
+  ],
+  [
+    "Q3",
+    780
+  ],
+  [
+    "Q4",
+    165
+  ],
+  [
+    "WEFC"
+  ],
+  [
+    "25-26"
+  ],
+  [
+    "Q3",
+    150
+  ],
+  [
+    "Q4",
+    13
+  ],
+  [
+    "Grand Total",
+    1263
+  ]
+]

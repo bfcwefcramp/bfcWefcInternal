@@ -1,0 +1,20 @@
+[
+  "S. No.",
+  "Particular",
+  "Event Name",
+  "BFC/WEFC",
+  "Date of Visit/ Event/ Training",
+  "Participant Type",
+  "Name of Entreprenuer",
+  "Enterprise Name/ SHG Name",
+  "Type of Organization",
+  "Gender",
+  "Social Category",
+  "Mobile No",
+  "Major Activity",
+  "Business Address",
+  "Domain Support Provided",
+  "Remarks/Comments",
+  "Financial Year ",
+  "Quarter of Financial Year "
+]

@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const MSME = require('../models/MSME');
 const Expert = require('../models/Expert');
+const EventStat = require('../models/EventStat');
 
 // Configure Multer for file upload
 const storage = multer.diskStorage({
@@ -163,6 +164,25 @@ router.get('/stats', async (req, res) => {
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// GET: Event Stats (Must be before /:id)
+router.get('/event-stats', async (req, res) => {
+    try {
+        const stats = await EventStat.find({}).sort({ count: -1 }); // Sort by highest count
+
+        let totalEvents = 0;
+        stats.forEach(s => totalEvents += s.count);
+
+        res.json({
+            success: true,
+            total: totalEvents,
+            data: stats
+        });
+    } catch (err) {
+        console.error('Error fetching event stats:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 

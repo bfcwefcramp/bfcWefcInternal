@@ -1,0 +1,113 @@
+Total Records: 1874
+
+--- ANALYSIS RESULT ---
+
+Field: BFC/WEFC
+  BFC: 1699
+  WEFC: 175
+
+Field: Event Name
+  Pm Vishwakarma Event-(18-11-2025): 160
+  CRP/SHG Workshop: 154
+  TSM-Mayem: 143
+  TSM-CORGAO: 109
+  TSM-SAL: 104
+  TSM-BHOMA: 100
+  PM Vishwakarma Awareness Workshop-(08-12-2025): 100
+  TSM-Dharbandora: 99
+  TSM-CANACONA: 94
+  TSM-IBRAMPUR: 93
+  Walk-ins: 84
+  Udyam Registrations Drive - Nerul: 74
+  Pm Vishwakarma Event-(11-11-2025): 60
+  St Joans Training - Jute Macrame: 55
+  PM Vishwakarma Trade Fair-10-01-2026: 52
+  ... and 16 more
+
+Field: Participant Type
+  SHG: 761
+  Aspirant: 740
+  MSME: 303
+
+Field: Type of Organization
+  Proprietory: 237
+  Proprietary: 102
+  MICRO: 29
+  Micro: 26
+  Small: 2
+
+Field: Gender
+  Female: 1726
+  Male: 130
+  female: 12
+  FEMALE: 5
+  Others: 1
+
+Field: Social Category
+  General: 1183
+  OBC: 350
+  ST: 282
+  SC: 45
+  GENERAL: 12
+  general: 2
+
+Field: District
+  NORTH GOA: 314
+  SOUTH GOA: 128
+  North Goa: 125
+  South Goa: 45
+  South goa: 41
+  q: 2
+
+Field: Taluka/Block
+  Bicholim: 139
+  Dharbandora: 39
+  Bardez: 36
+  dharbandoda: 32
+  dharbandora: 10
+  Darbandora: 10
+  q: 2
+  Quirlapale: 2
+  ponda: 2
+  BARDEZ: 1
+
+Field: Nature Of Business/Activity Type
+  Food processing: 16
+  Custom Tailoring: 12
+  tailoring: 12
+  FOOD PRODUCT: 11
+  Tailoring: 9
+  growing & selling vegetables: 7
+  sale of cloths: 6
+  Bakery Products: 4
+  Vegetables and Crops: 4
+  Handloom: 4
+  General store: 4
+  trading of flowers: 4
+  APPAREL: 4
+  TELARING: 3
+  MASALAS: 3
+  ... and 42 more
+
+Field: Main Product/Activity
+  Custom Tailoring: 34
+  FOOD PRODUCT: 18
+  Food processing: 16
+  tailoring: 12
+  Tailoring: 10
+  Food Products: 9
+  Vegetables and Crops: 8
+  Bakery Products: 7
+  growing & selling vegetables: 7
+  TELARING: 6
+  MASALAS: 6
+  Crop related: 6
+  Handloom: 6
+  sale of cloths: 6
+  Crop related, Oil: 5
+  ... and 49 more
+
+--- DATA COMPLETENESS ---
+Records with Turnover: 231
+Records with Investment: 0
+Records with Employment: 270

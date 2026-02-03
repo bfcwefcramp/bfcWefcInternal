@@ -1,0 +1,30 @@
+Index 0: S. No.
+Index 1: Particular
+Index 2: Event Name
+Index 3: BFC/WEFC
+Index 4: Date of Visit/ Event/ Training
+Index 5: Visit/ Event/ Training Location
+Index 6: Participant Type
+Index 7: Name of Entreprenuer
+Index 8: Enterprise Name/ SHG Name
+Index 9: Udyam Registration Number
+Index 10: Type of Organization
+Index 11: Gender
+Index 12: Social Category
+Index 13: Mobile No
+Index 14: Major Activity
+Index 15: Nature Of Business/Activity Type
+Index 16: Main Product/Activity
+Index 17: Number of Employees
+Index 18: Annual Turnover
+Index 19: Date of Commencement
+Index 20: Business Address
+Index 21: District
+Index 22: Taluka/Block
+Index 23: Village/Town
+Index 24: Pin Code
+Index 25: Date Of Registration
+Index 26: Domain Support Provided
+Index 27: Remarks/Comments
+Index 28: Financial Year 
+Index 29: Quarter of Financial Year 

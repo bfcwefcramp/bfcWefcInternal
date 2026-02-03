@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -6,105 +6,197 @@ import {
 } from 'recharts';
 import {
     LayoutDashboard, Calendar, FileText, CheckCircle,
-    X, User, Activity, Trophy
+    X, User, Users, Activity, Trophy
 } from 'lucide-react';
 import './ExpertDashboard.css';
 
 const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
     const [activeTab, setActiveTab] = useState('overview');
+    const [masterStats, setMasterStats] = useState(null);
 
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
-    // Mock Data for Charts (Will be replaced by real data from props)
-    const activityData = [
-        { name: 'Mon', events: 1, visits: 3 },
-        { name: 'Tue', events: 0, visits: 5 },
-        { name: 'Wed', events: 2, visits: 2 },
-        { name: 'Thu', events: 1, visits: 4 },
-        { name: 'Fri', events: 3, visits: 1 },
+    useEffect(() => {
+        if (expert && expert.name) {
+            fetchExpertMasterStats();
+        }
+    }, [expert]);
+
+    const fetchExpertMasterStats = async () => {
+        try {
+            const res = await axios.get(`${API_URL}/api/master/expert/${encodeURIComponent(expert.name)}`);
+            setMasterStats(res.data);
+        } catch (err) {
+            console.error("Failed to fetch expert master stats:", err);
+        }
+    };
+
+    // Derived Data for Charts
+    const eventDistribution = [
+        { name: 'Events', value: masterStats?.eventsCount || 0 },
+        { name: 'Workshops', value: masterStats?.workshopsCount || 0 },
+        { name: 'Walk-ins', value: masterStats?.walkinCount || 0 },
     ];
 
-    const pieData = [
-        { name: 'Events', value: stats?.eventsAttended || expert.stats?.eventsAttended || 12 },
-        { name: 'Registrations', value: stats?.registrations || expert.stats?.registrationsDone || 8 },
-        { name: 'MOMs', value: expert.stats?.momsCreated || 5 },
-    ];
-
-    const COLORS = ['#3b82f6', '#10b981', '#f59e0b'];
+    const COLORS = ['#3b82f6', '#f59e0b', '#10b981'];
 
     const renderOverview = () => (
-        <div className="overview-container">
+        <div className="overview-container animate-fade-in" style={{ padding: '1rem' }}>
             {/* KPI Cards */}
-            <div className="kpi-grid">
-                <div className="kpi-card">
-                    <div className="kpi-value">{stats?.totalVisits || 0}</div>
-                    <div className="kpi-label">Total Visits</div>
+            <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+                <div className="kpi-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', borderLeft: '5px solid #3b82f6' }}>
+                    <div className="kpi-value" style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937' }}>{masterStats?.totalInteractions || 0}</div>
+                    <div className="kpi-label" style={{ color: '#6b7280', fontSize: '0.9rem' }}>Total Interactions</div>
                 </div>
-                <div className="kpi-card" style={{ borderLeftColor: '#10b981' }}>
-                    <div className="kpi-value">{stats?.eventsAttended || expert.stats?.eventsAttended || 0}</div>
-                    <div className="kpi-label">Events Attended</div>
+                <div className="kpi-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', borderLeft: '5px solid #f59e0b' }}>
+                    <div className="kpi-value" style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937' }}>{masterStats?.eventsCount || 0}</div>
+                    <div className="kpi-label" style={{ color: '#6b7280', fontSize: '0.9rem' }}>Events Attended</div>
                 </div>
-                <div className="kpi-card" style={{ borderLeftColor: '#f59e0b' }}>
-                    <div className="kpi-value">{stats?.registrations || expert.stats?.registrationsDone || 0}</div>
-                    <div className="kpi-label">Udyam Reg.</div>
-                </div>
-                <div className="kpi-card" style={{ borderLeftColor: '#8b5cf6' }}>
-                    <div className="kpi-value">{expert.stats?.momsCreated || 0}</div>
-                    <div className="kpi-label">MOMs filed</div>
+                <div className="kpi-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', borderLeft: '5px solid #10b981' }}>
+                    <div className="kpi-value" style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937' }}>{masterStats?.udyamCount || 0}</div>
+                    <div className="kpi-label" style={{ color: '#6b7280', fontSize: '0.9rem' }}>Udyam Registrations</div>
                 </div>
             </div>
 
-            {/* Charts */}
-            <div className="charts-container">
-                <div className="chart-card">
-                    <div className="chart-title">
-                        <Activity size={20} />
-                        Activity Distribution
+            {/* Charts Section */}
+            <div className="charts-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
+                {/* Activity Distribution */}
+                <div className="chart-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                    <div className="chart-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600, color: '#374151' }}>
+                        <Activity size={20} className="text-blue-500" />
+                        Participation Distribution
                     </div>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                            <Pie
-                                data={pieData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={100}
-                                fill="#8884d8"
-                                paddingAngle={5}
-                                dataKey="value"
-                            >
-                                {pieData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                            </Pie>
-                            <Tooltip />
-                            <Legend />
-                        </PieChart>
-                    </ResponsiveContainer>
+                    <div style={{ height: '300px' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={eventDistribution}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={100}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                >
+                                    {eventDistribution.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }} />
+                                <Legend verticalAlign="bottom" height={36} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
 
-                <div className="chart-card">
-                    <div className="chart-title">
-                        <Calendar size={20} />
-                        Weekly Performance
+                {/* Recent Activity List */}
+                <div className="chart-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                    <div className="chart-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600, color: '#374151' }}>
+                        <Trophy size={20} className="text-yellow-500" />
+                        Recent Contributions
                     </div>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={activityData}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                            <XAxis dataKey="name" />
-                            <YAxis />
-                            <Tooltip />
-                            <Bar dataKey="events" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Events" />
-                            <Bar dataKey="visits" fill="#10b981" radius={[4, 4, 0, 0]} name="Visits" />
-                        </BarChart>
-                    </ResponsiveContainer>
+                    {masterStats && masterStats.recentActivity && masterStats.recentActivity.length > 0 ? (
+                        <div className="recent-activity-list" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '300px', overflowY: 'auto' }}>
+                            {masterStats.recentActivity.slice(0, 5).map((act, idx) => (
+                                <div key={idx} style={{ padding: '1rem', background: '#f9fafb', borderRadius: '12px', border: '1px solid #f3f4f6', transition: 'all 0.2s' }} className="hover:bg-gray-50">
+                                    <div style={{ fontWeight: 600, color: '#1f2937', marginBottom: '0.2rem' }}>{act.businessName || 'Visitor'}</div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#6b7280' }}>
+                                        <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '2px 8px', borderRadius: '12px' }}>{act.eventName || 'Office Visit'}</span>
+                                        <span>{new Date(act.date).toLocaleDateString()}</span>
+                                    </div>
+                                    {act.remarks && <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#4b5563', fontStyle: 'italic' }}>"{act.remarks}"</div>}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9ca3af' }}>
+                            <FileText size={40} style={{ opacity: 0.2, marginBottom: '0.5rem' }} />
+                            <p>No recent activity found in Master DB.</p>
+                        </div>
+                    )}
                 </div>
             </div>
+
+            {/* Udyam Drilldown Section */}
+            {masterStats?.udyamCount > 0 && (
+                <div style={{ marginTop: '2rem' }}>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1f2937', marginBottom: '1rem' }}>Udyam Registration Analytics</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                        {/* Source Distribution Chart */}
+                        <div className="chart-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                            <div className="chart-title" style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: 600, color: '#4b5563' }}>Acquisition Channel</div>
+                            <div style={{ height: '250px', width: '100%', minWidth: '300px' }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={masterStats?.udyamSourceDistribution || []}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                                        <YAxis axisLine={false} tickLine={false} />
+                                        <Tooltip cursor={{ fill: '#f3f4f6' }} contentStyle={{ borderRadius: '8px' }} />
+                                        <Bar dataKey="value" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        {/* Summary Box */}
+                        <div className="summary-card" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', padding: '1.5rem', borderRadius: '16px', color: 'white', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                            <div style={{ fontSize: '3rem', fontWeight: 'bold' }}>{masterStats?.udyamCount}</div>
+                            <div style={{ fontSize: '1.1rem', opacity: 0.9 }}>Total Registrations Facilitated</div>
+                            <div style={{ marginTop: '1rem', height: '1px', background: 'rgba(255,255,255,0.2)' }}></div>
+                            <div style={{ marginTop: '1rem', fontSize: '0.9rem', opacity: 0.8 }}>
+                                Top Channel: {[...(masterStats?.udyamSourceDistribution || [])].sort((a, b) => b.value - a.value)[0]?.name || 'N/A'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 
+    const renderMoMs = () => (
+        <div className="moms-container" style={{ padding: '1.5rem' }}>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1f2937', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Calendar size={24} className="text-purple-600" />
+                Events & MoMs Timeline
+            </h3>
 
+            {masterStats?.moms && masterStats.moms.length > 0 ? (
+                <div className="timeline" style={{ position: 'relative', borderLeft: '3px solid #e5e7eb', paddingLeft: '2rem', marginLeft: '1rem' }}>
+                    {masterStats.moms.map((mom, idx) => (
+                        <div key={idx} className="timeline-item" style={{ marginBottom: '2rem', position: 'relative' }}>
+                            {/* Dot */}
+                            <div style={{ position: 'absolute', left: '-2.6rem', top: '0.2rem', width: '1.2rem', height: '1.2rem', background: '#8b5cf6', borderRadius: '50%', border: '4px solid white', boxShadow: '0 0 0 2px #e5e7eb' }}></div>
 
-    // --- Monthly Report Handlers ---
+                            {/* Card */}
+                            <div
+                                className="timeline-card hover:translate-x-2"
+                                style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', border: '1px solid #f3f4f6', cursor: 'pointer', transition: 'all 0.3s' }}
+                                onClick={() => alert(`Event: ${mom.eventName}\nDate: ${new Date(mom.date).toLocaleDateString()}\n\nAgenda:\n${mom.agenda}\n\nKey Discussions:\n${mom.remarks}`)}
+                            >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                                    <h4 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1f2937' }}>{mom.eventName}</h4>
+                                    <span style={{ fontSize: '0.85rem', color: '#6b7280', background: '#f3f4f6', padding: '0.2rem 0.6rem', borderRadius: '99px' }}>{new Date(mom.date).toLocaleDateString()}</span>
+                                </div>
+                                <div style={{ fontSize: '0.9rem', color: '#4b5563', marginBottom: '0.5rem' }}>
+                                    <strong>Venue:</strong> {mom.venue || 'N/A'}
+                                </div>
+                                <p style={{ fontSize: '0.9rem', color: '#6b7280', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                    {mom.agenda || mom.remarks}
+                                </p>
+                                <div style={{ marginTop: '1rem', color: '#8b5cf6', fontSize: '0.85rem', fontWeight: 600 }}>Click for Details &rarr;</div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div style={{ textAlign: 'center', padding: '3rem', color: '#9ca3af' }}>
+                    <Calendar size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
+                    <p>No MoMs or Events found for this expert.</p>
+                </div>
+            )}
+        </div>
+    );
+
 
 
     // Unified Update Helper
@@ -117,8 +209,6 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
             alert("Failed to update: " + (err.response?.data?.error || err.message));
         }
     };
-
-
 
     // --- Unified Plans & Reports State ---
     const [expandedMonth, setExpandedMonth] = useState(null);
@@ -137,7 +227,7 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
     // For Editing
     const [editingWeekIndex, setEditingWeekIndex] = useState(null); // If not null, we are editing this index in the currentPlanIndexForModal
 
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+    // API_URL already defined above
 
     // --- Edit Profile State ---
     const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -287,7 +377,7 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
         );
     };
 
-    const renderPlans = () => {
+    const renderWeeklyPlans = () => {
         // Logic to find ONLY the current week to display at the top
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -594,28 +684,79 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
         );
     };
 
+    const renderMonthlyReports = () => (
+        <div style={{ padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1f2937' }}>Monthly Performance Reports</h3>
+                <button
+                    onClick={handleAddMonth}
+                    style={{ background: '#f59e0b', color: 'white', padding: '0.6rem 1.2rem', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500, boxShadow: '0 2px 4px rgba(245, 158, 11, 0.3)' }}
+                >
+                    <Trophy size={18} /> Add New Month
+                </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                {expert.plans && expert.plans.length > 0 ? (
+                    expert.plans.map((plan, idx) => (
+                        <div key={idx} style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', border: '1px solid #f3f4f6', transition: 'transform 0.2s' }} className="hover:scale-[1.02]">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                <div>
+                                    <h4 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937' }}>{plan.month}</h4>
+                                    <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>{plan.year}</span>
+                                </div>
+                                {plan.isCurrent && <span style={{ fontSize: '0.75rem', background: '#dbeafe', color: '#2563eb', padding: '4px 12px', borderRadius: '99px', fontWeight: 600 }}>Current</span>}
+                            </div>
+
+                            <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4b5563' }}>
+                                <CheckCircle size={16} className="text-emerald-500" />
+                                <span style={{ fontWeight: 500 }}>{plan.weeks?.length || 0} Weekly Plans</span>
+                            </div>
+
+                            <button
+                                onClick={() => { handleSetCurrent(idx); setActiveTab('weekly'); }}
+                                style={{ width: '100%', padding: '0.8rem', background: '#f9fafb', color: '#374151', borderRadius: '8px', border: '1px solid #e5e7eb', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s' }}
+                                className="hover:bg-gray-100"
+                            >
+                                View Detailed Plans &rarr;
+                            </button>
+                        </div>
+                    ))
+                ) : (
+                    <div style={{ gridColumn: '1/-1', textAlign: 'center', color: '#9ca3af', padding: '4rem', background: '#f9fafb', borderRadius: '16px', border: '2px dashed #e5e7eb' }}>
+                        <Trophy size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
+                        <p style={{ fontSize: '1.1rem', fontWeight: 500 }}>No monthly reports found.</p>
+                        <p style={{ fontSize: '0.9rem' }}>Add a new month to get started with tracking.</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+
     const renderMOMs = () => (
         <div className="moms-container" style={{ background: 'white', padding: '2rem', borderRadius: '16px' }}>
             <div className="chart-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', fontSize: '1.2rem', fontWeight: 600, color: '#1f2937' }}>
                 <FileText size={20} />
-                Minutes of Meeting & Events
+                Minutes of Meeting & Events Log
             </div>
-            {expert.moms && expert.moms.length > 0 ? (
+            {masterStats && masterStats.moms && masterStats.moms.length > 0 ? (
                 <div className="moms-list">
-                    {expert.moms.map((mom, idx) => (
+                    {masterStats.moms.map((mom, idx) => (
                         <div key={idx} style={{ padding: '1.5rem', borderBottom: '1px solid #f3f4f6' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                                 <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#111827' }}>{mom.eventName}</span>
                                 <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>{new Date(mom.date).toLocaleDateString()}</span>
                             </div>
-                            <div style={{ color: '#4b5563', lineHeight: '1.6' }}>{mom.summary}</div>
+                            <div style={{ color: '#4b5563', lineHeight: '1.6', background: '#f9fafb', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
+                                <strong>Remarks/Details:</strong> {mom.remarks || 'No details provided.'}
+                            </div>
                         </div>
                     ))}
                 </div>
             ) : (
                 <div style={{ textAlign: 'center', padding: '3rem', color: '#9ca3af' }}>
                     <FileText size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
-                    <p>No Minutes of Meeting recorded.</p>
+                    <p>No Minutes of Meeting found in Master Records for this expert.</p>
                 </div>
             )}
         </div>
@@ -703,25 +844,40 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
                             )}
                         </div>
 
-                        <nav className="dashboard-nav">
-                            <div
-                                className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`}
+                        <nav className="dashboard-nav" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <button
+                                className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('overview')}
+                                style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600, color: activeTab === 'overview' ? '#fff' : '#6b7280', background: activeTab === 'overview' ? '#3b82f6' : 'transparent', border: 'none', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}
                             >
-                                <LayoutDashboard size={20} /> Overview
-                            </div>
-                            <div
-                                className={`nav-item ${activeTab === 'plans' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('plans')}
+                                <LayoutDashboard size={18} style={{ marginRight: '0.5rem' }} />
+                                Overview
+                            </button>
+                            <button
+                                className={`tab-btn ${activeTab === 'weekly' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('weekly')}
+                                style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600, color: activeTab === 'weekly' ? '#fff' : '#6b7280', background: activeTab === 'weekly' ? '#10b981' : 'transparent', border: 'none', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}
                             >
-                                <CheckCircle size={20} /> Plans & Goals
-                            </div>
-                            <div
-                                className={`nav-item ${activeTab === 'moms' ? 'active' : ''}`}
+                                <CheckCircle size={18} style={{ marginRight: '0.5rem' }} />
+                                Plans & Goals
+                            </button>
+                            <button
+                                className={`tab-btn ${activeTab === 'monthly' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('monthly')}
+                                style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600, color: activeTab === 'monthly' ? '#fff' : '#6b7280', background: activeTab === 'monthly' ? '#f59e0b' : 'transparent', border: 'none', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}
+                            >
+                                <FileText size={18} style={{ marginRight: '0.5rem' }} />
+                                Monthly Reports
+                            </button>
+                            <button
+                                className={`tab-btn ${activeTab === 'moms' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('moms')}
+                                style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600, color: activeTab === 'moms' ? '#fff' : '#6b7280', background: activeTab === 'moms' ? '#8b5cf6' : 'transparent', border: 'none', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}
                             >
-                                <FileText size={20} /> MOMs & Events
-                            </div>
+                                <Calendar size={18} style={{ marginRight: '0.5rem' }} />
+                                MoMs & Events
+                            </button>
+
                         </nav>
                     </div>
 
@@ -758,17 +914,24 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
                     <div className="dashboard-header">
                         <div className="dashboard-title">
                             {activeTab === 'overview' && 'Dashboard Overview'}
-                            {activeTab === 'plans' && 'Expert Plans & Goals'}
+                            {activeTab === 'weekly' && 'Expert Plans & Goals'}
+                            {activeTab === 'monthly' && 'Monthly Performance'}
                             {activeTab === 'moms' && 'Event Documentation'}
+                            {activeTab === 'profile' && 'Edit Profile'}
                         </div>
                         <button className="close-btn" onClick={onClose}>
                             <X size={32} />
                         </button>
                     </div>
 
-                    {activeTab === 'overview' && renderOverview()}
-                    {activeTab === 'plans' && renderPlans()}
-                    {activeTab === 'moms' && renderMOMs()}
+                    {/* Content Area */}
+                    <div className="dashboard-content" style={{ flex: 1, overflowY: 'auto' }}>
+                        {activeTab === 'overview' && renderOverview()}
+                        {activeTab === 'moms' && renderMoMs()}
+                        {activeTab === 'profile' && renderEditProfile()}
+                        {activeTab === 'monthly' && renderMonthlyReports()}
+                        {activeTab === 'weekly' && renderWeeklyPlans()}
+                    </div>
                 </div>
             </div>
         </div>
