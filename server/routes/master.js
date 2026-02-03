@@ -7,32 +7,93 @@ router.get('/stats', async (req, res) => {
     try {
         const totalRecords = await MasterRecord.countDocuments();
 
+        // Organization Breakdown
+        const bfcCount = await MasterRecord.countDocuments({ organization: { $regex: /bfc/i } });
+        const wefcCount = await MasterRecord.countDocuments({ organization: { $regex: /wefc/i } });
+
         // Activity Breakdown
         const workshops = await MasterRecord.countDocuments({ category: 'Workshop' });
         const events = await MasterRecord.countDocuments({ category: 'Event' });
+        // momEvents is split now:
+        const exhibitions = await MasterRecord.countDocuments({ category: 'Exhibition' });
+        const deptVisits = await MasterRecord.countDocuments({ category: 'Departmental_Visit' });
         const walkins = await MasterRecord.countDocuments({ category: 'Walk-in' });
 
-        // Udyam Registrations (where field exists and not empty)
+        // Unique Beneficiaries
+        const uniqueBeneficiaries = (await MasterRecord.distinct('name')).length;
+
+        // Udyam Registrations
         const udyamCount = await MasterRecord.countDocuments({
-            udyamRegistrationNo: { $exists: true, $ne: '', $not: { $regex: /^\s*$/ } }
+            $or: [
+                { category: 'Udyam' },
+                { udyamRegistrationNo: { $exists: true, $ne: '', $not: { $regex: /^\s*$/ } } }
+            ]
         });
 
         // Event List (Distinct event names with counts)
         const eventsListAggregate = await MasterRecord.aggregate([
-            { $match: { category: { $ne: 'Walk-in' } } }, // Exclude walk-ins from event list
-            { $group: { _id: "$eventName", count: { $sum: 1 }, type: { $first: "$category" } } },
-            { $sort: { count: -1 } }
+            { $match: { category: { $in: ['Exhibition', 'Departmental_Visit', 'Event', 'MoM_Event', 'Workshop'] } } },
+            {
+                $group: {
+                    _id: "$eventName",
+                    count: { $sum: 1 },
+                    type: { $first: "$category" },
+                    date: { $first: "$date" },
+                    description: { $first: "$remarks" }
+                }
+            },
+            { $sort: { date: -1 } },
+            { $limit: 30 }
         ]);
+
+        // Monthly Interventions (Bar Chart Data)
+        const monthlyStats = await MasterRecord.aggregate([
+            {
+                $match: {
+                    date: { $exists: true, $ne: null },
+                    category: { $nin: ['Exhibition', 'Departmental_Visit', 'MoM_Event'] }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        month: { $month: "$date" },
+                        year: { $year: "$date" }
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { "_id.year": 1, "_id.month": 1 } }
+        ]);
+
+        const formatMonth = (m) => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m - 1];
 
         res.json({
             total: totalRecords,
+            organizations: {
+                BFC: bfcCount,
+                WEFC: wefcCount
+            },
             breakdown: {
                 workshops,
                 events,
+                exhibitions,
+                deptVisits,
                 walkins
             },
+            uniqueBeneficiaries,
             udyamCount,
-            eventsList: eventsListAggregate.map(e => ({ name: e._id || 'Unnamed Event', count: e.count, type: e.type }))
+            monthlyInterventions: monthlyStats.map(m => ({
+                name: `${formatMonth(m._id.month)} ${m._id.year}`,
+                value: m.count
+            })),
+            eventsList: eventsListAggregate.map(e => ({
+                name: e._id || 'Unnamed Event',
+                count: e.count,
+                type: e.type,
+                date: e.date,
+                description: e.description
+            }))
         });
 
     } catch (err) {
