@@ -17,6 +17,8 @@ router.get('/stats', async (req, res) => {
         // momEvents is split now:
         // momEvents is split now:
         // Use Aggregation to count UNIQUE events (by Name + Date) to avoid double counting attendees
+        // Exhibition (Category='Exhibition' OR name contains 'Tarang')
+        // Exhibition (Category='Exhibition')
         const exhibitionsAgg = await MasterRecord.aggregate([
             { $match: { category: 'Exhibition' } },
             { $group: { _id: { name: "$eventName", date: "$date" } } },
@@ -31,6 +33,15 @@ router.get('/stats', async (req, res) => {
         ]);
         const deptVisits = deptVisitsAgg.length > 0 ? deptVisitsAgg[0].count : 0;
 
+        // New: Field Visits (Category='Field_Visit')
+        // New: Field Visits (Category='Field_Visit')
+        const fieldVisitsAgg = await MasterRecord.aggregate([
+            { $match: { category: 'Field_Visit' } },
+            { $group: { _id: { name: "$eventName", date: "$date" } } },
+            { $count: "count" }
+        ]);
+        const fieldVisits = fieldVisitsAgg.length > 0 ? fieldVisitsAgg[0].count : 0;
+
         const walkins = await MasterRecord.countDocuments({ category: 'Walk-in' });
 
         // Unique Beneficiaries
@@ -44,20 +55,23 @@ router.get('/stats', async (req, res) => {
             ]
         });
 
-        // Event List (Distinct event names with counts)
+        // Event List (Distinct unique events)
         const eventsListAggregate = await MasterRecord.aggregate([
-            { $match: { category: { $in: ['Exhibition', 'Departmental_Visit', 'Event', 'MoM_Event', 'Workshop'] } } },
             {
-                $group: {
-                    _id: "$eventName",
-                    count: { $sum: 1 },
-                    type: { $first: "$category" },
-                    date: { $first: "$date" },
-                    description: { $first: "$remarks" }
+                $match: {
+                    category: { $in: ['Exhibition', 'Departmental_Visit', 'Event', 'MoM_Event', 'Workshop', 'Field_Visit'] }
                 }
             },
-            { $sort: { date: -1 } },
-            { $limit: 30 }
+            {
+                $group: {
+                    _id: { name: "$eventName", date: "$date" },
+                    type: { $first: "$category" },
+                    description: { $first: "$remarks" },
+                    venue: { $first: "$venue" },
+                    attendees: { $addToSet: "$expertName" }
+                }
+            },
+            { $sort: { "_id.date": -1 } }
         ]);
 
         // Monthly Interventions (Bar Chart Data)
@@ -88,11 +102,20 @@ router.get('/stats', async (req, res) => {
                 BFC: bfcCount,
                 WEFC: wefcCount
             },
+            eventsList: eventsListAggregate.map(e => ({
+                name: e._id.name || 'Unnamed Event',
+                type: e.type,
+                date: e._id.date,
+                description: e.description,
+                venue: e.venue,
+                attendees: e.attendees
+            })),
             breakdown: {
                 workshops,
                 events,
                 exhibitions,
                 deptVisits,
+                fieldVisits,
                 walkins
             },
             uniqueBeneficiaries,
@@ -100,13 +123,6 @@ router.get('/stats', async (req, res) => {
             monthlyInterventions: monthlyStats.map(m => ({
                 name: `${formatMonth(m._id.month)} ${m._id.year}`,
                 value: m.count
-            })),
-            eventsList: eventsListAggregate.map(e => ({
-                name: e._id || 'Unnamed Event',
-                count: e.count,
-                type: e.type,
-                date: e.date,
-                description: e.description
             }))
         });
 
@@ -320,6 +336,70 @@ router.post('/event', async (req, res) => {
         res.json({ message: 'Event created successfully', count: recordsToInsert.length });
     } catch (err) {
         console.error('Error creating event:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT: Edit Event (Update all records for a specific event)
+router.put('/event', async (req, res) => {
+    try {
+        const { originalName, originalDate, newEventName, newDate, newVenue, newCategory, newAgenda, newRemarks, attendees } = req.body;
+
+        if (!originalName || !originalDate) {
+            return res.status(400).json({ error: 'Original Event Name and Date are required for update' });
+        }
+
+        // 1. Delete old records
+        await MasterRecord.deleteMany({
+            eventName: originalName,
+            date: new Date(originalDate)
+        });
+
+        // 2. Insert new records (same logic as POST)
+        const recordsToInsert = attendees.map(expertName => ({
+            expertName,
+            eventName: newEventName,
+            venue: newVenue,
+            date: new Date(newDate),
+            category: newCategory || 'Event',
+            agenda: newAgenda,
+            remarks: newRemarks,
+            status: 'Completed', // Defaulting to completed for past events
+            // Fields not strictly in form but good to keep consistent if needed
+            quarter: Math.floor((new Date(newDate).getMonth() + 3) / 3),
+            year: new Date(newDate).getFullYear()
+        }));
+
+        if (recordsToInsert.length > 0) {
+            await MasterRecord.insertMany(recordsToInsert);
+        }
+
+        res.json({ message: 'Event updated successfully', count: recordsToInsert.length });
+
+    } catch (err) {
+        console.error('Error updating event:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE: Delete Event (All records for this event)
+router.delete('/event', async (req, res) => {
+    try {
+        const { eventName, date } = req.body; // Expecting JSON body
+
+        if (!eventName || !date) {
+            return res.status(400).json({ error: 'Event Name and Date are required for deletion' });
+        }
+
+        // Delete all records matching this name and date (removes from all experts)
+        const result = await MasterRecord.deleteMany({
+            eventName: eventName,
+            date: new Date(date)
+        });
+
+        res.json({ message: 'Event deleted successfully', deletedCount: result.deletedCount });
+    } catch (err) {
+        console.error('Error deleting event:', err);
         res.status(500).json({ error: err.message });
     }
 });

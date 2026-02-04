@@ -1,7 +1,7 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, Users, Building2 } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Building2, Calendar } from 'lucide-react';
 import './Layout.css';
 
 const Layout = ({ children }) => {
@@ -54,6 +54,10 @@ const Layout = ({ children }) => {
                         <Users size={20} />
                         Experts
                     </Link>
+                    <Link to="/events" className={`nav-item ${isActive('/events') ? 'active' : ''}`}>
+                        <Calendar size={20} />
+                        Events & Workshops
+                    </Link>
                 </nav>
 
                 <div className="sidebar-footer">
@@ -67,7 +71,8 @@ const Layout = ({ children }) => {
                         <div>
                             <h2 className="page-title">
                                 {location.pathname === '/' ? 'Dashboard' :
-                                    location.pathname === '/form' ? 'Assistance Form' : 'Expert Profiles'}
+                                    location.pathname === '/form' ? 'Assistance Form' :
+                                        location.pathname === '/events' ? 'Events & Field Work' : 'Expert Profiles'}
                             </h2>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>

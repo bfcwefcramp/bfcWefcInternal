@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
 
 const COLORS = ['#3b82f6', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6'];
-const EVENT_COLORS = ['#8b5cf6', '#06b6d4', '#fbcfe8', '#f59e0b']; // Purple, Cyan, Pink, Amber
+const EVENT_COLORS = ['#8b5cf6', '#06b6d4', '#fbcfe8', '#f59e0b', '#84cc16']; // Purple, Cyan, Pink, Amber, Lime
 import AddEventModal from './AddEventModal';
 import { Download } from 'lucide-react';
 
@@ -72,8 +72,10 @@ const Dashboard = () => {
     // Use "breakdown" fields directly for chart
     const momData = [
         { name: 'Exhibitions', value: masterStats.breakdown?.exhibitions || 0 },
-        { name: 'Dept. Visits', value: masterStats.breakdown?.deptVisits || 0 }
-    ];
+        { name: 'Dept. Visits', value: masterStats.breakdown?.deptVisits || 0 },
+        { name: 'Field Visits', value: masterStats.breakdown?.fieldVisits || 0 },
+        { name: 'Workshops', value: masterStats.breakdown?.workshops || 0 }
+    ].filter(d => d.value > 0);
 
     return (
         <div className="dashboard-container">
@@ -85,31 +87,6 @@ const Dashboard = () => {
                     <p style={{ color: '#6b7280' }}>Real-time overview of BFC & WEFC Performance</p>
                 </div>
                 <div style={{ display: 'flex', gap: '1rem' }}>
-                    <button
-                        onClick={async () => {
-                            try {
-                                const response = await axios.get(`${API_URL}/api/master/export-events`, { responseType: 'blob' });
-                                const url = window.URL.createObjectURL(new Blob([response.data]));
-                                const link = document.createElement('a');
-                                link.href = url;
-                                link.setAttribute('download', 'BFC_WEFC_Events_Report.xlsx');
-                                document.body.appendChild(link);
-                                link.click();
-                            } catch (err) {
-                                console.error("Export failed", err);
-                                alert("Failed to download export.");
-                            }
-                        }}
-                        style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                    >
-                        <Download size={18} /> Export Data
-                    </button>
-                    <button
-                        onClick={() => setIsAddEventOpen(true)}
-                        style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                    >
-                        <Calendar size={18} /> Add Event
-                    </button>
                     <button
                         onClick={fetchMasterStats}
                         style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
@@ -196,7 +173,7 @@ const Dashboard = () => {
                                     dataKey="value"
                                 >
                                     {momData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.name === 'Exhibitions' ? '#8b5cf6' : '#06b6d4'} />
+                                        <Cell key={`cell-${index}`} fill={EVENT_COLORS[index % EVENT_COLORS.length]} />
                                     ))}
                                 </Pie>
                                 <Tooltip />
@@ -206,7 +183,7 @@ const Dashboard = () => {
                         {/* Center Text */}
                         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -60%)', textAlign: 'center' }}>
                             <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937' }}>
-                                {(masterStats.breakdown?.exhibitions || 0) + (masterStats.breakdown?.deptVisits || 0)}
+                                {(masterStats.breakdown?.exhibitions || 0) + (masterStats.breakdown?.deptVisits || 0) + (masterStats.breakdown?.fieldVisits || 0) + (masterStats.breakdown?.workshops || 0)}
                             </div>
                             <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>Activities</div>
                         </div>

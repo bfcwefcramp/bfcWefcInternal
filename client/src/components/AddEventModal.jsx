@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { X, Calendar, MapPin, Users, FileText, CheckCircle } from 'lucide-react';
 
-const AddEventModal = ({ onClose, onEventAdded }) => {
+const AddEventModal = ({ onClose, onEventAdded, initialData = null }) => {
     const [formData, setFormData] = useState({
         eventName: '',
         venue: '',
-        date: new Date().toISOString().split('T')[0],
-        category: 'Exhibition',
+        date: '',
+        category: 'Event',
         agenda: '',
         remarks: '',
         attendees: []
@@ -16,12 +16,31 @@ const AddEventModal = ({ onClose, onEventAdded }) => {
     const [experts, setExperts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState(null);
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
     useEffect(() => {
         fetchExperts();
-    }, []);
+        if (initialData) {
+            // Pre-fill form for editing
+            setFormData({
+                eventName: initialData.name || '',
+                venue: initialData.venue || '',
+                date: initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : '', // Format YYYY-MM-DD
+                category: initialData.type || 'Event',
+                agenda: initialData.description || '', // Assumption: description maps to agenda
+                remarks: initialData.description || '', // Keeping remarks same as description since we merged them in list
+                attendees: initialData.attendees || [] // Pre-fill attendees if available
+            });
+        } else {
+            // For new event, set default date
+            setFormData(prev => ({
+                ...prev,
+                date: new Date().toISOString().split('T')[0]
+            }));
+        }
+    }, [initialData]);
 
     const fetchExperts = async () => {
         setLoading(true);
@@ -30,6 +49,7 @@ const AddEventModal = ({ onClose, onEventAdded }) => {
             setExperts(res.data);
         } catch (err) {
             console.error("Failed to fetch experts:", err);
+            setError("Failed to load experts.");
         } finally {
             setLoading(false);
         }
@@ -53,20 +73,40 @@ const AddEventModal = ({ onClose, onEventAdded }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError(null); // Clear previous errors
+
         if (formData.attendees.length === 0) {
-            alert("Please select at least one expert attendee.");
+            setError("Please select at least one expert attendee.");
             return;
         }
 
         setSubmitting(true);
         try {
-            await axios.post(`${API_URL}/api/master/event`, formData);
-            alert("Event created successfully!");
+            if (initialData) {
+                // UPDATE Mode
+                await axios.put(`${API_URL}/api/master/event`, {
+                    originalName: initialData.name,
+                    originalDate: initialData.date,
+                    newEventName: formData.eventName,
+                    newDate: formData.date,
+                    newVenue: formData.venue,
+                    newCategory: formData.category,
+                    newAgenda: formData.agenda,
+                    newRemarks: formData.remarks,
+                    attendees: formData.attendees
+                });
+                alert("Event updated successfully!");
+            } else {
+                // CREATE Mode
+                await axios.post(`${API_URL}/api/master/event`, formData);
+                alert("Event created successfully!");
+            }
+
             if (onEventAdded) onEventAdded();
             onClose();
         } catch (err) {
-            console.error(err);
-            alert("Failed to create event: " + (err.response?.data?.error || err.message));
+            console.error('Error saving event:', err);
+            setError('Failed to save event. ' + (err.response?.data?.error || err.message));
         } finally {
             setSubmitting(false);
         }
@@ -83,12 +123,18 @@ const AddEventModal = ({ onClose, onEventAdded }) => {
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '1rem' }}>
                     <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#111827', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <Calendar className="text-blue-600" /> Add New Event / MoM
+                        <Calendar className="text-blue-600" /> {initialData ? 'Edit Event / MoM' : 'Add New Event / MoM'}
                     </h2>
                     <button onClick={onClose} style={{ background: '#f3f4f6', border: 'none', padding: '0.5rem', borderRadius: '50%', cursor: 'pointer', color: '#4b5563' }}>
                         <X size={24} />
                     </button>
                 </div>
+
+                {error && (
+                    <div style={{ backgroundColor: '#fee2e2', color: '#ef4444', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid #fca5a5' }}>
+                        {error}
+                    </div>
+                )}
 
                 <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: '1fr 1fr' }}>
                     {/* Left Column: Details */}
@@ -103,6 +149,7 @@ const AddEventModal = ({ onClose, onEventAdded }) => {
                             >
                                 <option value="Exhibition">Exhibition</option>
                                 <option value="Departmental_Visit">Departmental Visit</option>
+                                <option value="Field_Visit">Field Visit</option>
                                 <option value="Event">Event</option>
                                 <option value="Workshop">Workshop</option>
                                 <option value="MoM">General MoM</option>
@@ -176,7 +223,7 @@ const AddEventModal = ({ onClose, onEventAdded }) => {
 
                     {/* Right Column: Attendees Selection */}
                     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
+                        <label style={{ fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
                             <span>Select Attendees</span>
                             <span style={{ color: '#6b7280', fontWeight: 400 }}>{formData.attendees.length} selected</span>
                         </label>
