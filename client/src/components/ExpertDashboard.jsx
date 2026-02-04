@@ -9,6 +9,7 @@ import {
     X, User, Users, Activity, Trophy, CalendarCheck // Added CalendarCheck
 } from 'lucide-react';
 import './ExpertDashboard.css';
+import AttendanceCalendar from './AttendanceCalendar';
 
 const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
     const [activeTab, setActiveTab] = useState('overview');
@@ -772,7 +773,7 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
                             </div>
 
                             <button
-                                onClick={() => { handleSetCurrent(idx); setActiveTab('weekly'); }}
+                                onClick={() => { handleSetCurrent(idx); setActiveTab('monthly'); }} // Stay on Monthly tab
                                 style={{ width: '100%', padding: '0.8rem', background: '#f9fafb', color: '#374151', borderRadius: '8px', border: '1px solid #e5e7eb', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s' }}
                                 className="hover:bg-gray-100"
                             >
@@ -790,6 +791,8 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
             </div>
         </div>
     );
+
+
 
     const renderMOMs = () => (
         <div className="moms-container" style={{ background: 'white', padding: '2rem', borderRadius: '16px' }}>
@@ -991,42 +994,13 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
                         {activeTab === 'weekly' && renderWeeklyPlans()}
                     </div>
                 </div>
-                {/* Attendance History Modal */}
+                {/* New Interactive Attendance Calendar */}
                 {isAttendanceModalOpen && (
-                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
-                        <div className="animate-fade-in" style={{ background: 'white', width: '90%', maxWidth: '400px', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', maxHeight: '80vh', overflowY: 'auto' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1f2937', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <CalendarCheck className="text-orange-500" size={20} />
-                                    Attendance History
-                                </h3>
-                                <button onClick={() => setIsAttendanceModalOpen(false)} style={{ background: '#f3f4f6', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                                    <X size={18} color="#4b5563" />
-                                </button>
-                            </div>
-
-                            {masterStats?.attendanceStats?.history && masterStats.attendanceStats.history.length > 0 ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    {masterStats.attendanceStats.history.map((record, idx) => (
-                                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: idx === 0 ? '#fff7ed' : '#f9fafb', borderRadius: '12px', border: idx === 0 ? '1px solid #fdba74' : '1px solid #f3f4f6' }}>
-                                            <div style={{ fontWeight: 600, color: '#374151' }}>{record.month}</div>
-                                            <div style={{ fontWeight: 700, fontSize: '1.1rem', color: idx === 0 ? '#ea580c' : '#6b7280' }}>
-                                                {record.days} <span style={{ fontSize: '0.8rem', fontWeight: 400 }}>days</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>
-                                    No attendance records found.
-                                </div>
-                            )}
-
-                            <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.8rem', color: '#9ca3af' }}>
-                                Based on recorded events, workshops, & moMs.
-                            </div>
-                        </div>
-                    </div>
+                    <AttendanceCalendar
+                        expert={expert}
+                        onClose={() => setIsAttendanceModalOpen(false)}
+                        onUpdate={onUpdate}
+                    />
                 )}
             </div>
         </div>

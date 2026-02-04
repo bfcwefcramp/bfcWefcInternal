@@ -39,6 +39,13 @@ const ExpertSchema = new mongoose.Schema({
         attendees: [String] // List of other experts/officials
     }],
 
+    // Attendance Log (Manual Overrides for Calendar)
+    attendanceLog: [{
+        date: { type: Date, required: true },
+        status: { type: String, enum: ['Present', 'Leave', 'Holiday', 'Weekend', 'Office_Work'], required: true },
+        remarks: String
+    }],
+
     contact: { type: String },
     profileImage: { type: String } // URL or path
 });
