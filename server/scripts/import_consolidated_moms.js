@@ -109,12 +109,25 @@ const importConsolidated = async () => {
                 if (!parsedDate || isNaN(parsedDate.getTime())) parsedDate = new Date(0); // Default invalid
 
                 // Parse Attendees
-                const attendeesList = attendeesRaw.toString().split(/[\r\n,]+/);
+                // Improved Parsing: Scan for known experts instead of relying on delimiters
+                const attendeesNorm = attendeesRaw.toString().toLowerCase();
                 const uniqueExperts = new Set();
 
-                attendeesList.forEach(a => {
-                    const exp = findExpert(a);
-                    if (exp) uniqueExperts.add(exp);
+                // 1. Check for exact full names first
+                Object.values(expertMap).forEach(fullName => {
+                    if (attendeesNorm.includes(fullName.toLowerCase())) {
+                        uniqueExperts.add(fullName);
+                    }
+                });
+
+                // 2. Check for keys/aliases (first names) if not already found
+                Object.keys(expertMap).forEach(key => {
+                    if (key.length > 3 && attendeesNorm.includes(key)) {
+                        // Resolve the key to full name
+                        const resolvedName = expertMap[key];
+                        // Only add if not already present (prevents duplicates)
+                        if (resolvedName) uniqueExperts.add(resolvedName);
+                    }
                 });
 
                 if (uniqueExperts.size === 0) continue;

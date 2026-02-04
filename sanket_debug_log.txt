@@ -1,0 +1,69 @@
+--- Debugging Sanket ---
+MongoDB Connected
+--- DB Record ---
+Found Expert in DB: Sanket Ganpat Desai
+Reading file: C:\Users\DITC\Desktop\bfcWefcBackedupV1.1\bfcWefcInternal\Final Master Database sheet.xlsx
+
+Scanning Sheet: MoMs - Event_Exhibitions
+[Row 6] Event: Udyam Registrations Drive - Nerul | Attendees: Sanket Desai (BFC)
+Pradip Nagargoje (BFC)
+    -> Parsing 'Sanket Desai (BFC)': ✅ MATCH: Sanket Ganpat Desai
+[Row 7] Event: PM Vishwakarma Exhibition - Mapusa | Attendees: Sanket Desai (BFC) 
+Smitha Raikar (WEFC) 
+Shreyas Raikar (BFC) 
+Jatin Gahlot (WEFC)
+
+    -> Parsing 'Sanket Desai (BFC)': ✅ MATCH: Sanket Ganpat Desai
+[Row 8] Event: Moira Udyam registration drive | Attendees: Sanket Desai (BFC) 
+Roshan Jha (WEFC)
+
+    -> Parsing 'Sanket Desai (BFC)': ✅ MATCH: Sanket Ganpat Desai
+[Row 9] Event: PM Vishwakarma Awareness Workshop | Attendees: Yogesh Kumar (BFC) Sanket Desai (BFC)   Pradip Nagargoje (BFC) Shreyash Raikar (BFC)
+    -> Parsing 'Yogesh Kumar (BFC) Sanket Desai (BFC)   Pradip Nagargoje (BFC) Shreyash Raikar (BFC)': ✅ MATCH: Yogesh Kumar
+[Row 12] Event: Water & Energy Audit workshop Thivim | Attendees: Yogesh Kumar (BFC)                                                           Sanket Desai (BFC)
+    -> Parsing 'Yogesh Kumar (BFC)                                                           Sanket Desai (BFC)': ✅ MATCH: Yogesh Kumar
+[Row 13] Event: Water & Energy Audit workshop Colvale | Attendees: Yogesh Kumar (BFC)                                                         Sanket Desai (BFC)
+    -> Parsing 'Yogesh Kumar (BFC)                                                         Sanket Desai (BFC)': ✅ MATCH: Yogesh Kumar
+[Row 14] Event: CRP & SHG Workshop | Attendees: Ferdin Sylvester (BFC)                                                                                                      Megha Dalal (BFC)                                                                Sanket Desai (BFC)                                                                                 Jatin Gahlot (WEFC)                                                                 Yogesh Kumar (BFC)                                                          Roshan Jha (WEFC)                                                                 Shreyash Raikar (BFC)                                                            Smitha Raikar (WEFC)                                                            Shreya Naik (WEFC)                                                                Samiksha Chodankar (BFC)
+    -> Parsing 'Ferdin Sylvester (BFC)                                                                                                      Megha Dalal (BFC)                                                                Sanket Desai (BFC)                                                                                 Jatin Gahlot (WEFC)                                                                 Yogesh Kumar (BFC)                                                          Roshan Jha (WEFC)                                                                 Shreyash Raikar (BFC)                                                            Smitha Raikar (WEFC)                                                            Shreya Naik (WEFC)                                                                Samiksha Chodankar (BFC)': ✅ MATCH: Yogesh Kumar
+[Row 15] Event: Net Zero Event | Attendees: Ferdin Sylvester (BFC)
+Megha Dalal (BFC)
+Sanket Desai (BFC)
+Jatin Gahlot (WEFC)
+
+    -> Parsing 'Sanket Desai (BFC)': ✅ MATCH: Sanket Ganpat Desai
+[Row 20] Event: Swayampoorna Sakhi Training, Goa | Attendees: Sanket Desai (BFC)
+Ferdin Sylvester (BFC)
+
+    -> Parsing 'Sanket Desai (BFC)': ✅ MATCH: Sanket Ganpat Desai
+[Row 22] Event: Tarang Exhibition | Attendees: Manasi Kowadkar (BFC)
+Mayuri Patil (BFC)
+Shreya Naik (WEFC)
+Shreyash Raikar (BFC)
+Roshan Jha (WFEC)
+Sanket Desai(BFC)
+
+    -> Parsing 'Sanket Desai(BFC)': ✅ MATCH: Sanket Ganpat Desai
+Total mentions of 'Sanket' in MoMs - Event_Exhibitions: 10
+
+Scanning Sheet:  MoMs - departmental visits
+[Row 2] Event: Thivim IDC | Attendees: Sanket Desai
+Ferdin Sylvester
+    -> Parsing 'Sanket Desai': ✅ MATCH: Sanket Ganpat Desai
+[Row 6] Event: World Trade Centre (WTC) Goa | Attendees: Sanket Desai (BFC)
+Jatin Gahlot (WEFC)
+
+    -> Parsing 'Sanket Desai (BFC)': ✅ MATCH: Sanket Ganpat Desai
+[Row 8] Event: DRDA Livelihood team | Attendees: Sanket Desai (BFC)
+Ferdin Sylvester (BFC)
+Samiksha Chodankar (BFC) 
+Smita Raikar (WEFC)
+Mayuri Patil (BFC)
+
+    -> Parsing 'Sanket Desai (BFC)': ✅ MATCH: Sanket Ganpat Desai
+[Row 17] Event: District Rural Development Association Goa | Attendees: Sanket Desai (BFC)
+Ferdin Sylvester (BFC) 
+Jatin Gahlot (WEFC)
+
+    -> Parsing 'Sanket Desai (BFC)': ✅ MATCH: Sanket Ganpat Desai
+Total mentions of 'Sanket' in  MoMs - departmental visits: 4
