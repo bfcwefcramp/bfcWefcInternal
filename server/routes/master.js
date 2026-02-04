@@ -15,8 +15,22 @@ router.get('/stats', async (req, res) => {
         const workshops = await MasterRecord.countDocuments({ category: 'Workshop' });
         const events = await MasterRecord.countDocuments({ category: 'Event' });
         // momEvents is split now:
-        const exhibitions = await MasterRecord.countDocuments({ category: 'Exhibition' });
-        const deptVisits = await MasterRecord.countDocuments({ category: 'Departmental_Visit' });
+        // momEvents is split now:
+        // Use Aggregation to count UNIQUE events (by Name + Date) to avoid double counting attendees
+        const exhibitionsAgg = await MasterRecord.aggregate([
+            { $match: { category: 'Exhibition' } },
+            { $group: { _id: { name: "$eventName", date: "$date" } } },
+            { $count: "count" }
+        ]);
+        const exhibitions = exhibitionsAgg.length > 0 ? exhibitionsAgg[0].count : 0;
+
+        const deptVisitsAgg = await MasterRecord.aggregate([
+            { $match: { category: 'Departmental_Visit' } },
+            { $group: { _id: { name: "$eventName", date: "$date" } } },
+            { $count: "count" }
+        ]);
+        const deptVisits = deptVisitsAgg.length > 0 ? deptVisitsAgg[0].count : 0;
+
         const walkins = await MasterRecord.countDocuments({ category: 'Walk-in' });
 
         // Unique Beneficiaries
@@ -272,6 +286,75 @@ router.get('/expert/:expertName', async (req, res) => {
 
     } catch (err) {
         console.error('Error fetching expert master stats:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST: Create New Event (Multi-Expert)
+router.post('/event', async (req, res) => {
+    try {
+        const { eventName, venue, date, category, agenda, remarks, attendees, udyamRegistrationNo, businessName } = req.body;
+
+        if (!eventName || !date || !attendees || !Array.isArray(attendees)) {
+            return res.status(400).json({ error: 'Missing required fields or attendees list' });
+        }
+
+        const recordsToInsert = attendees.map(expertName => ({
+            expertName,
+            eventName,
+            venue,
+            date: new Date(date),
+            category: category || 'Event',
+            agenda,
+            remarks,
+            organization: 'BFC', // Default
+            udyamRegistrationNo, // Optional
+            businessName,         // Optional
+            createdAt: new Date()
+        }));
+
+        if (recordsToInsert.length > 0) {
+            await MasterRecord.insertMany(recordsToInsert);
+        }
+
+        res.json({ message: 'Event created successfully', count: recordsToInsert.length });
+    } catch (err) {
+        console.error('Error creating event:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Export Events API
+router.get('/export-events', async (req, res) => {
+    try {
+        const xlsx = require('xlsx');
+
+        const records = await MasterRecord.find({
+            category: { $in: ['Exhibition', 'Departmental_Visit', 'Event', 'Workshop', 'MoM', 'MoM_Event'] }
+        }).sort({ date: -1 });
+
+        const data = records.map(r => ({
+            Date: r.date ? new Date(r.date).toLocaleDateString() : '',
+            Category: r.category,
+            Event: r.eventName,
+            Venue: r.venue,
+            'Attended By': r.expertName,
+            Agenda: r.agenda,
+            Remarks: r.remarks
+        }));
+
+        const wb = xlsx.utils.book_new();
+        const ws = xlsx.utils.json_to_sheet(data);
+        xlsx.utils.book_append_sheet(wb, ws, "Events & MoMs");
+
+        const buffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+        res.set('Content-Disposition', 'attachment; filename="Events_MoMs_Export.xlsx"');
+        res.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.send(buffer);
+
+    } catch (err) {
+        console.error('Export error:', err);
         res.status(500).json({ error: err.message });
     }
 });

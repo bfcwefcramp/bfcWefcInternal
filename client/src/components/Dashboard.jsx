@@ -10,6 +10,8 @@ import './Dashboard.css';
 
 const COLORS = ['#3b82f6', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6'];
 const EVENT_COLORS = ['#8b5cf6', '#06b6d4', '#fbcfe8', '#f59e0b']; // Purple, Cyan, Pink, Amber
+import AddEventModal from './AddEventModal';
+import { Download } from 'lucide-react';
 
 // Simple Modal Component
 const EventModal = ({ event, onClose }) => {
@@ -42,6 +44,9 @@ const Dashboard = () => {
     const [masterStats, setMasterStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [selectedEvent, setSelectedEvent] = useState(null);
+    const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
     useEffect(() => {
         fetchMasterStats();
@@ -79,13 +84,47 @@ const Dashboard = () => {
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#1f2937', marginBottom: '0.5rem' }}>Global Analytics Dashboard</h2>
                     <p style={{ color: '#6b7280' }}>Real-time overview of BFC & WEFC Performance</p>
                 </div>
-                <button
-                    onClick={fetchMasterStats}
-                    style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                >
-                    <Activity size={18} /> Refresh Data
-                </button>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button
+                        onClick={async () => {
+                            try {
+                                const response = await axios.get(`${API_URL}/api/master/export-events`, { responseType: 'blob' });
+                                const url = window.URL.createObjectURL(new Blob([response.data]));
+                                const link = document.createElement('a');
+                                link.href = url;
+                                link.setAttribute('download', 'BFC_WEFC_Events_Report.xlsx');
+                                document.body.appendChild(link);
+                                link.click();
+                            } catch (err) {
+                                console.error("Export failed", err);
+                                alert("Failed to download export.");
+                            }
+                        }}
+                        style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                        <Download size={18} /> Export Data
+                    </button>
+                    <button
+                        onClick={() => setIsAddEventOpen(true)}
+                        style={{ background: '#8b5cf6', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                        <Calendar size={18} /> Add Event
+                    </button>
+                    <button
+                        onClick={fetchMasterStats}
+                        style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                        <Activity size={18} /> Refresh Data
+                    </button>
+                </div>
             </div>
+
+            {isAddEventOpen && (
+                <AddEventModal
+                    onClose={() => setIsAddEventOpen(false)}
+                    onEventAdded={fetchMasterStats}
+                />
+            )}
 
             {/* 1. KEY METRICS CARDS (Removed Total) */}
             <div className="stats-grid">
