@@ -96,7 +96,10 @@ const AttendanceCalendar = ({ expert, masterStats, onClose, onUpdate }) => {
             const payload = {
                 attendanceLog: updatedLog
             };
-            await axios.put(`${API_URL}/api/experts/${expert._id}`, payload);
+            const token = localStorage.getItem('token');
+            await axios.put(`${API_URL}/api/experts/${expert._id}`, payload, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
 
             if (onUpdate) onUpdate({ ...expert, attendanceLog: updatedLog });
             setSelectedDate(null);
@@ -162,43 +165,58 @@ const AttendanceCalendar = ({ expert, masterStats, onClose, onUpdate }) => {
     // We need to merge this with manual leaves for that month.
 
     const getMonthlyHistory = () => {
-        // Start with masterStats history if available
+        // We need to calculate precise counts by merging Master Stats (Events) and Manual Log (Overrides)
+
+        // 1. Collect all unique dates with their status
+        const dayMap = {}; // "YYYY-MM-DD" -> Status
+
+        // A. Populate from Events (Master Stats) -> Default to 'Present'
+        (masterStats?.moms || []).forEach(m => {
+            const dateStr = new Date(m.date).toDateString(); // Normalize
+            dayMap[dateStr] = 'Present';
+        });
+
+        // B. Apply Manual Overrides (wins over events)
+        manualLog.forEach(log => {
+            const dateStr = new Date(log.date).toDateString();
+            if (log.status) {
+                dayMap[dateStr] = log.status; // Can be Present, Leave, Holiday, etc.
+            }
+        });
+
+        // 2. Group by Month
         const historyMap = {};
 
-        // 1. Init from Master Stats (Presents)
-        (masterStats?.attendanceStats?.history || []).forEach(h => {
-            historyMap[h.month] = {
-                month: h.month,
-                year: h.year || new Date().getFullYear(), // Fallback
-                present: h.days,
-                leaves: 0
-            };
-        });
+        Object.entries(dayMap).forEach(([dateStr, status]) => {
+            const date = new Date(dateStr);
+            const monthKey = `${date.getFullYear()}-${date.getMonth()}`; // Unique key YYYY-M
+            const monthLabel = date.toLocaleString('default', { month: 'long' });
+            const year = date.getFullYear();
 
-        // 2. Add Manual Leaves from Log
-        manualLog.forEach(log => {
-            const date = new Date(log.date);
-            const monthName = date.toLocaleString('default', { month: 'long' });
-
-            if (!historyMap[monthName]) {
-                historyMap[monthName] = { month: monthName, year: date.getFullYear(), present: 0, leaves: 0 };
+            if (!historyMap[monthKey]) {
+                historyMap[monthKey] = {
+                    key: monthKey, // for sorting
+                    month: monthLabel,
+                    year: year,
+                    present: 0,
+                    leaves: 0
+                };
             }
 
-            if (log.status === 'Leave') {
-                historyMap[monthName].leaves += 1;
-            } else if (log.status === 'Present') {
-                // If manually marked present, we should add it? 
-                // masterStats might overlap if event exists. 
-                // For simplified logic, assume masterStats counts events. 
-                // Manual 'Present' might be extra. Let's just count manual 'Leaves' for now strictly.
+            if (status === 'Present') {
+                historyMap[monthKey].present += 1;
+            } else if (status === 'Leave') {
+                historyMap[monthKey].leaves += 1;
             }
         });
 
-        // Convert to array and sort (current month first roughly)
-        // Simplistic sort by month index
+        // 3. Convert to array and Sort Descending (Newest Month First)
         return Object.values(historyMap).sort((a, b) => {
-            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-            return months.indexOf(b.month) - months.indexOf(a.month);
+            const [yearA, monthA] = a.key.split('-').map(Number);
+            const [yearB, monthB] = b.key.split('-').map(Number);
+
+            if (yearA !== yearB) return yearB - yearA;
+            return monthB - monthA;
         });
     };
 

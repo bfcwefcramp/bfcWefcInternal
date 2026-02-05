@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell
@@ -12,6 +13,10 @@ import './ExpertDashboard.css';
 import AttendanceCalendar from './AttendanceCalendar';
 
 const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
+    const { user } = useAuth();
+    const isAdmin = user?.role === 'admin' || user?.role === 'sudo_admin';
+    const isSudo = user?.role === 'sudo_admin';
+
     const [activeTab, setActiveTab] = useState('overview');
     const [masterStats, setMasterStats] = useState(null);
 
@@ -238,7 +243,10 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
     // Unified Update Helper
     const updateExpertData = async (updatedData) => {
         try {
-            const res = await axios.put(`${API_URL}/api/experts/${expert._id}`, updatedData);
+            const token = localStorage.getItem('token');
+            const res = await axios.put(`${API_URL}/api/experts/${expert._id}`, updatedData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             onUpdate(res.data);
         } catch (err) {
             console.error(err);
@@ -462,8 +470,12 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
                     {activeWeekData ? (
                         <div className="active-week-card" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '2rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', position: 'relative' }}>
                             <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', display: 'flex', gap: '0.5rem' }}>
-                                <button onClick={() => openEditWeekModal(activePlanIndex, activeWeekIndex, activeWeekData)} title="Edit Week" style={{ padding: '0.5rem', background: '#f3f4f6', border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#4b5563' }}><FileText size={18} /></button>
-                                <button onClick={() => handleDeleteWeek(activePlanIndex, activeWeekIndex)} title="Delete Week" style={{ padding: '0.5rem', background: '#fee2e2', border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#ef4444' }}><X size={18} /></button>
+                                {isAdmin && (
+                                    <>
+                                        <button onClick={() => openEditWeekModal(activePlanIndex, activeWeekIndex, activeWeekData)} title="Edit Week" style={{ padding: '0.5rem', background: '#f3f4f6', border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#4b5563' }}><FileText size={18} /></button>
+                                        <button onClick={() => handleDeleteWeek(activePlanIndex, activeWeekIndex)} title="Delete Week" style={{ padding: '0.5rem', background: '#fee2e2', border: 'none', borderRadius: '6px', cursor: 'pointer', color: '#ef4444' }}><X size={18} /></button>
+                                    </>
+                                )}
                             </div>
 
                             <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '1rem' }}>
@@ -941,28 +953,31 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
                         BFC & WEFC Operations<br />Internal Dashboard v1.2
                     </div>
 
-                    <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                        <button
-                            onClick={onDelete}
-                            style={{
-                                width: '100%',
-                                padding: '0.8rem',
-                                background: 'rgba(239, 68, 68, 0.1)',
-                                color: '#fca5a5',
-                                border: '1px solid rgba(239, 68, 68, 0.2)',
-                                borderRadius: '8px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '0.5rem',
-                                fontSize: '0.9rem',
-                                transition: 'all 0.2s'
-                            }}
-                        >
-                            <X size={16} /> Delete Expert
-                        </button>
-                    </div>
+                    {/* Delete Expert Button - Sudo Admin Only */}
+                    {isSudo && onDelete && (
+                        <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                            <button
+                                onClick={onDelete}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.8rem',
+                                    background: 'rgba(239, 68, 68, 0.1)',
+                                    color: '#fca5a5',
+                                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem',
+                                    fontSize: '0.9rem',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <X size={16} /> Delete Expert
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Main Content */}

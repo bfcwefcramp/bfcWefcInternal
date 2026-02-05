@@ -2,11 +2,13 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, FileText, Users, Building2, Calendar } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import './Layout.css';
 
 const Layout = ({ children }) => {
     const location = useLocation();
     const [totalCount, setTotalCount] = useState(0);
+    const { user, logout } = useAuth();
 
     const isActive = (path) => location.pathname === path;
 
@@ -58,6 +60,12 @@ const Layout = ({ children }) => {
                         <Calendar size={20} />
                         Events & Workshops
                     </Link>
+                    {user?.role === 'sudo_admin' && (
+                        <Link to="/users" className={`nav-item ${isActive('/users') ? 'active' : ''}`}>
+                            <Users size={20} />
+                            Users
+                        </Link>
+                    )}
                 </nav>
 
                 <div className="sidebar-footer">
@@ -79,9 +87,21 @@ const Layout = ({ children }) => {
                             <div className="total-stat" style={{ padding: '0.5rem 1rem', background: '#f59e0b1a', borderRadius: '8px', border: '1px solid #f59e0b33', color: '#b45309', fontWeight: '600' }}>
                                 Total Reached: {totalCount}
                             </div>
-                            <div className="user-profile">
-                                <div className="avatar">A</div>
-                                <span>Admin User</span>
+                            <div className="user-profile" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <div className="avatar"> {user?.username?.charAt(0).toUpperCase() || 'A'} </div>
+                                    <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>{user?.username || 'Admin'}</span>
+                                </div>
+                                <button
+                                    onClick={logout}
+                                    style={{
+                                        padding: '0.4rem 0.8rem', fontSize: '0.8rem',
+                                        color: '#ef4444', border: '1px solid #ef4444',
+                                        background: 'transparent', borderRadius: '4px', cursor: 'pointer'
+                                    }}
+                                >
+                                    Logout
+                                </button>
                             </div>
                         </div>
                     </div>

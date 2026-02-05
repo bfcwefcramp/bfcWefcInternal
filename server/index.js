@@ -31,6 +31,8 @@ const expertRoutes = require('./routes/experts');
 app.use('/api/msme', msmeRoutes);
 app.use('/api/experts', expertRoutes);
 app.use('/api/master', require('./routes/master'));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/users', require('./routes/users'));
 
 app.get('/', (req, res) => {
     res.send('BFC & WEFC API Running');

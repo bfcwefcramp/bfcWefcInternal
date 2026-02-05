@@ -3,11 +3,14 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Pencil, Save, X, Trash2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import './Layout.css';
 
 const MSMEDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const isAdmin = user?.role === 'admin';
     const [msme, setMsme] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
@@ -135,21 +138,23 @@ const MSMEDetail = () => {
                                 <button onClick={() => setIsEditing(false)} className="btn-cancel" style={{ background: '#64748b', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <X size={16} /> Cancel
                                 </button>
-                                <button onClick={async () => {
-                                    if (window.confirm('Are you sure you want to delete this MSME record? This action cannot be undone.')) {
-                                        try {
-                                            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-                                            await axios.delete(`${API_URL}/api/msme/${id}`);
-                                            alert('Record deleted successfully');
-                                            navigate('/list');
-                                        } catch (err) {
-                                            alert('Error deleting record');
-                                            console.error(err);
+                                {isAdmin && (
+                                    <button onClick={async () => {
+                                        if (window.confirm('Are you sure you want to delete this MSME record? This action cannot be undone.')) {
+                                            try {
+                                                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+                                                await axios.delete(`${API_URL}/api/msme/${id}`);
+                                                alert('Record deleted successfully');
+                                                navigate('/list');
+                                            } catch (err) {
+                                                alert('Error deleting record');
+                                                console.error(err);
+                                            }
                                         }
-                                    }
-                                }} className="btn-delete" style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 'auto' }}>
-                                    <Trash2 size={16} /> Delete Record
-                                </button>
+                                    }} className="btn-delete" style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 'auto' }}>
+                                        <Trash2 size={16} /> Delete Record
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ) : (
@@ -286,19 +291,21 @@ const MSMEDetail = () => {
                                             style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }}
                                         />
                                     </a>
-                                    <button
-                                        onClick={() => handleDeletePhoto(photo)}
-                                        style={{
-                                            position: 'absolute', top: '10px', right: '10px',
-                                            background: 'rgba(220, 38, 38, 0.9)', color: 'white', border: 'none',
-                                            borderRadius: '50%', width: '32px', height: '32px',
-                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                        }}
-                                        title="Delete Photo"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
+                                    {isAdmin && (
+                                        <button
+                                            onClick={() => handleDeletePhoto(photo)}
+                                            style={{
+                                                position: 'absolute', top: '10px', right: '10px',
+                                                background: 'rgba(220, 38, 38, 0.9)', color: 'white', border: 'none',
+                                                borderRadius: '50%', width: '32px', height: '32px',
+                                                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                            }}
+                                            title="Delete Photo"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    )}
                                 </div>
                             );
                         })}

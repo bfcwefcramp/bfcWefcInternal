@@ -2,8 +2,10 @@ const express = require('express');
 const router = express.Router();
 const Expert = require('../models/Expert');
 
-// POST: Create new Expert
-router.post('/', async (req, res) => {
+const { protect, authorize } = require('../middleware/authMiddleware');
+
+// POST: Create new Expert (Sudo Admin Only)
+router.post('/', protect, authorize('sudo_admin'), async (req, res) => {
     try {
         const newExpert = new Expert(req.body);
         const savedExpert = await newExpert.save();
@@ -23,9 +25,20 @@ router.get('/', async (req, res) => {
     }
 });
 
-// PUT: Update Expert details
-router.put('/:id', async (req, res) => {
-    console.log(`PUT /api/experts/${req.params.id} hit`);
+// PUT: Update Expert details (Protected: Admin or Owner)
+// PUT: Update Expert details (Protected: Sudo Admin, Admin or Owner)
+router.put('/:id', protect, async (req, res) => {
+    console.log(`PUT /api/experts/${req.params.id} hit by ${req.user.username} (${req.user.role})`);
+
+    // Check ownership or admin status
+    // Sudo Admin and Admin can edit.
+    if (req.user.role !== 'admin' && req.user.role !== 'sudo_admin') {
+        // If not admin/sudo_admin, must be the expert themselves
+        if (!req.user.expertId || req.user.expertId.toString() !== req.params.id) {
+            return res.status(403).json({ error: 'Not authorized to update this profile' });
+        }
+    }
+
     try {
         const updatedExpert = await Expert.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!updatedExpert) {
@@ -40,9 +53,9 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// DELETE: Delete Expert
-router.delete('/:id', async (req, res) => {
-    console.log(`DELETE /api/experts/${req.params.id} hit`);
+// DELETE: Delete Expert (Protected: Sudo Admin Only)
+router.delete('/:id', protect, authorize('sudo_admin'), async (req, res) => {
+    console.log(`DELETE /api/experts/${req.params.id} hit by ${req.user.username}`);
     try {
         const deletedExpert = await Expert.findByIdAndDelete(req.params.id);
         if (!deletedExpert) {

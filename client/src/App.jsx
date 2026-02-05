@@ -10,20 +10,44 @@ import EventsPage from './components/EventsPage';
 import MSMEDetail from './components/MSMEDetail';
 import MSMEList from './components/MSMEList';
 
+import { AuthProvider } from './context/AuthContext';
+import Login from './components/Login';
+import PrivateRoute from './components/PrivateRoute';
+import ExpertPortal from './components/ExpertPortal';
+import UserManagement from './components/UserManagement';
+
 function App() {
   return (
-    <Router>
-      <Layout>
+    <AuthProvider>
+      <Router>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/list" element={<MSMEList />} />
-          <Route path="/form" element={<MSMEForm />} />
-          <Route path="/experts" element={<Experts />} />
-          <Route path="/events" element={<EventsPage />} />
-          <Route path="/msme/:id" element={<MSMEDetail />} />
+          <Route path="/login" element={<Login />} />
+
+          {/* Admin Routes - Protected */}
+          <Route element={<PrivateRoute roles={['admin']} />}>
+            <Route path="/" element={<Layout><Dashboard /></Layout>} />
+            <Route path="/list" element={<Layout><MSMEList /></Layout>} />
+            <Route path="/form" element={<Layout><MSMEForm /></Layout>} />
+            <Route path="/experts" element={<Layout><Experts /></Layout>} />
+            <Route path="/events" element={<Layout><EventsPage /></Layout>} />
+            <Route path="/msme/:id" element={<Layout><MSMEDetail /></Layout>} />
+          </Route>
+
+          {/* Sudo Admin Routes */}
+          <Route element={<PrivateRoute roles={['sudo_admin']} />}>
+            <Route path="/users" element={<Layout><UserManagement /></Layout>} />
+          </Route>
+
+          {/* Expert Route - Protected */}
+          <Route element={<PrivateRoute roles={['expert']} />}>
+            <Route path="/expert-dashboard" element={<ExpertPortal />} />
+          </Route>
+
+          {/* Fallback */}
+          <Route path="*" element={<Login />} />
         </Routes>
-      </Layout>
-    </Router>
+      </Router>
+    </AuthProvider>
   );
 }
 

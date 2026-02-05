@@ -5,6 +5,7 @@ const path = require('path');
 const MSME = require('../models/MSME');
 const Expert = require('../models/Expert');
 const EventStat = require('../models/EventStat');
+const { protect, authorize } = require('../middleware/authMiddleware');
 
 // Configure Multer for file upload
 const storage = multer.diskStorage({
@@ -279,8 +280,8 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// DELETE: Delete a photo
-router.delete('/:id/photos', async (req, res) => {
+// DELETE: Delete a photo (Protected: Admin Only)
+router.delete('/:id/photos', protect, authorize('admin'), async (req, res) => {
     try {
         const { photoUrl } = req.body;
         const msme = await MSME.findById(req.params.id);
@@ -303,8 +304,8 @@ router.delete('/:id/photos', async (req, res) => {
     }
 });
 
-// DELETE: Delete MSME record
-router.delete('/:id', async (req, res) => {
+// DELETE: Delete MSME record (Protected: Admin Only)
+router.delete('/:id', protect, authorize('admin'), async (req, res) => {
     try {
         const msme = await MSME.findByIdAndDelete(req.params.id);
         if (!msme) return res.status(404).json({ message: 'MSME not found' });

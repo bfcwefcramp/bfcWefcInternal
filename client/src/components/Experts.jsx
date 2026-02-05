@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { User, Briefcase } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import ExpertDashboard from './ExpertDashboard';
 import './Experts.css'; // We'll create this
 
@@ -62,7 +63,10 @@ const Experts = () => {
                 expertise: newExpert.expertise.split(',').map(s => s.trim())
             };
             const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-            await axios.post(`${API_URL}/api/experts`, expertData);
+            const token = localStorage.getItem('token');
+            await axios.post(`${API_URL}/api/experts`, expertData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             setShowModal(false);
             setNewExpert({ name: '', designation: '', expertise: '', contact: '' });
             fetchExperts(); // Refresh
@@ -110,8 +114,11 @@ const Experts = () => {
             // Sanitize payload: remove _id and __v to avoid immutable field errors
             const { _id, __v, ...updateData } = editForm;
             const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+            const token = localStorage.getItem('token');
 
-            const res = await axios.put(`${API_URL}/api/experts/${selectedExpert._id}`, updateData);
+            const res = await axios.put(`${API_URL}/api/experts/${selectedExpert._id}`, updateData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
 
             // Update local state
             setExperts(experts.map(ex => ex._id === res.data._id ? res.data : ex));
@@ -137,7 +144,10 @@ const Experts = () => {
         if (window.confirm('Are you sure you want to delete this expert?')) {
             try {
                 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-                await axios.delete(`${API_URL}/api/experts/${selectedExpert._id}`);
+                const token = localStorage.getItem('token');
+                await axios.delete(`${API_URL}/api/experts/${selectedExpert._id}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
                 setExperts(experts.filter(ex => ex._id !== selectedExpert._id));
                 setSelectedExpert(null); // Close modal
             } catch (err) {
@@ -153,11 +163,16 @@ const Experts = () => {
         }
     };
 
+    const { user } = useAuth();
+    const isSudo = user?.role === 'sudo_admin';
+
     return (
         <div className="experts-container">
             <div className="experts-header">
                 <h2 className="title">Our Experts</h2>
-                <button className="btn btn-primary" onClick={() => setShowModal(true)}>Add New Expert</button>
+                {isSudo && (
+                    <button className="btn btn-primary" onClick={() => setShowModal(true)}>Add New Expert</button>
+                )}
             </div>
 
             <div className="experts-grid">
