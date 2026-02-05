@@ -309,6 +309,80 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
 
     const currentMonthPlan = sortedPlans.find(p => p.month === currentMonthName && p.year === currentYear) || null;
 
+    // --- Modal Handlers ---
+    const openAddWeekModal = (planIndex) => {
+        setCurrentPlanIndexForModal(planIndex);
+        setEditingWeekIndex(null);
+        const plan = expert.plans[planIndex];
+        setWeekFormData({
+            weekNumber: plan.weeks.length + 1,
+            startDate: '',
+            endDate: '',
+            plan: '',
+            achievement: '',
+            additional: '',
+            remarks: ''
+        });
+        setIsWeekModalOpen(true);
+    };
+
+    const openEditWeekModal = (planIndex, weekIndex, weekData) => {
+        setCurrentPlanIndexForModal(planIndex);
+        setEditingWeekIndex(weekIndex);
+        setWeekFormData({
+            weekNumber: weekData.weekNumber,
+            startDate: weekData.startDate ? new Date(weekData.startDate).toISOString().split('T')[0] : '',
+            endDate: weekData.endDate ? new Date(weekData.endDate).toISOString().split('T')[0] : '',
+            plan: weekData.plan || '',
+            achievement: weekData.achievement || '',
+            additional: weekData.additional || '',
+            remarks: weekData.remarks || ''
+        });
+        setIsWeekModalOpen(true);
+    };
+
+    const handleSaveWeek = async () => {
+        if (!weekFormData.startDate || !weekFormData.endDate) {
+            alert("Please select Start and End dates.");
+            return;
+        }
+
+        const updatedPlans = [...expert.plans];
+        // Use exact index from expert.plans that matches the one passed.
+        // NOTE: 'currentPlanIndexForModal' comes from 'expert.plans.indexOf(plan)'.
+
+        const newWeek = {
+            weekNumber: parseInt(weekFormData.weekNumber),
+            weekLabel: `Week ${weekFormData.weekNumber}`,
+            startDate: new Date(weekFormData.startDate),
+            endDate: new Date(weekFormData.endDate),
+            plan: weekFormData.plan,
+            achievement: weekFormData.achievement,
+            additional: weekFormData.additional,
+            remarks: weekFormData.remarks,
+            status: 'Pending'
+        };
+
+        if (editingWeekIndex !== null) {
+            updatedPlans[currentPlanIndexForModal].weeks[editingWeekIndex] = newWeek;
+        } else {
+            updatedPlans[currentPlanIndexForModal].weeks.push(newWeek);
+        }
+
+        // Sort weeks
+        updatedPlans[currentPlanIndexForModal].weeks.sort((a, b) => a.weekNumber - b.weekNumber);
+
+        await updateExpertData({ ...expert, plans: updatedPlans });
+        setIsWeekModalOpen(false);
+    };
+
+    const handleDeleteWeek = async (planIndex, weekIndex) => {
+        if (!window.confirm("Are you sure you want to delete this week's data?")) return;
+        const updatedPlans = [...expert.plans];
+        updatedPlans[planIndex].weeks.splice(weekIndex, 1);
+        await updateExpertData({ ...expert, plans: updatedPlans });
+    };
+
     const handleAddMonth = async () => {
         const month = prompt("Enter Month (e.g., January):");
         if (!month) return;
