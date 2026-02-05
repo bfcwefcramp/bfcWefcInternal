@@ -98,6 +98,7 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
                 {/* Activity Distribution */}
                 <div className="chart-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
                     <div className="chart-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600, color: '#374151' }}>
+
                         <Activity size={20} className="text-blue-500" />
                         Participation Distribution
                     </div>
@@ -294,88 +295,19 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
         }
     };
 
-    // Helper: Sort Plans
+    // Helper: Sort Plans and Strict Current Month Logic
     const sortedPlans = (expert.plans || []).sort((a, b) => {
         if (b.year !== a.year) return b.year - a.year;
         const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         return months.indexOf(b.month) - months.indexOf(a.month);
     });
 
-    const currentMonthPlan = sortedPlans.find(p => p.isCurrent) || sortedPlans[0];
+    // Detect Current Month Plan Strictly by Date
+    const todayTest = new Date();
+    const currentMonthName = todayTest.toLocaleString('default', { month: 'long' });
+    const currentYear = todayTest.getFullYear();
 
-    // --- Modal Handlers ---
-    const openAddWeekModal = (planIndex) => {
-        setCurrentPlanIndexForModal(planIndex);
-        setEditingWeekIndex(null);
-        const plan = expert.plans[planIndex];
-        setWeekFormData({
-            weekNumber: plan.weeks.length + 1,
-            startDate: '',
-            endDate: '',
-            plan: '',
-            achievement: '',
-            additional: '',
-            remarks: ''
-        });
-        setIsWeekModalOpen(true);
-    };
-
-    const openEditWeekModal = (planIndex, weekIndex, weekData) => {
-        setCurrentPlanIndexForModal(planIndex);
-        setEditingWeekIndex(weekIndex);
-        setWeekFormData({
-            weekNumber: weekData.weekNumber,
-            startDate: weekData.startDate ? new Date(weekData.startDate).toISOString().split('T')[0] : '',
-            endDate: weekData.endDate ? new Date(weekData.endDate).toISOString().split('T')[0] : '',
-            plan: weekData.plan || '',
-            achievement: weekData.achievement || '',
-            additional: weekData.additional || '',
-            remarks: weekData.remarks || ''
-        });
-        setIsWeekModalOpen(true);
-    };
-
-    const handleSaveWeek = async () => {
-        if (!weekFormData.startDate || !weekFormData.endDate) {
-            alert("Please select Start and End dates.");
-            return;
-        }
-
-        const updatedPlans = [...expert.plans];
-        // Use exact index from expert.plans that matches the one passed.
-        // NOTE: 'currentPlanIndexForModal' comes from 'expert.plans.indexOf(plan)'.
-
-        const newWeek = {
-            weekNumber: parseInt(weekFormData.weekNumber),
-            weekLabel: `Week ${weekFormData.weekNumber}`,
-            startDate: new Date(weekFormData.startDate),
-            endDate: new Date(weekFormData.endDate),
-            plan: weekFormData.plan,
-            achievement: weekFormData.achievement,
-            additional: weekFormData.additional,
-            remarks: weekFormData.remarks,
-            status: 'Pending'
-        };
-
-        if (editingWeekIndex !== null) {
-            updatedPlans[currentPlanIndexForModal].weeks[editingWeekIndex] = newWeek;
-        } else {
-            updatedPlans[currentPlanIndexForModal].weeks.push(newWeek);
-        }
-
-        // Sort weeks
-        updatedPlans[currentPlanIndexForModal].weeks.sort((a, b) => a.weekNumber - b.weekNumber);
-
-        await updateExpertData({ ...expert, plans: updatedPlans });
-        setIsWeekModalOpen(false);
-    };
-
-    const handleDeleteWeek = async (planIndex, weekIndex) => {
-        if (!window.confirm("Are you sure you want to delete this week's data?")) return;
-        const updatedPlans = [...expert.plans];
-        updatedPlans[planIndex].weeks.splice(weekIndex, 1);
-        await updateExpertData({ ...expert, plans: updatedPlans });
-    };
+    const currentMonthPlan = sortedPlans.find(p => p.month === currentMonthName && p.year === currentYear) || null;
 
     const handleAddMonth = async () => {
         const month = prompt("Enter Month (e.g., January):");
@@ -391,14 +323,6 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
         };
 
         const updatedPlans = [...expert.plans, newPlan];
-        await updateExpertData({ ...expert, plans: updatedPlans });
-    };
-
-    const handleSetCurrent = async (planIndex) => {
-        const updatedPlans = expert.plans.map((p, idx) => ({
-            ...p,
-            isCurrent: idx === planIndex
-        }));
         await updateExpertData({ ...expert, plans: updatedPlans });
     };
 
@@ -555,22 +479,15 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
                                             display: 'flex',
                                             justifyContent: 'space-between',
                                             alignItems: 'center',
-                                            backgroundColor: plan.isCurrent ? '#eff6ff' : 'white'
+                                            backgroundColor: (plan.month === currentMonthName && plan.year === currentYear) ? '#eff6ff' : 'white'
                                         }}
                                     >
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                             <span style={{ fontWeight: 600, fontSize: '1.1rem', color: '#1f2937' }}>{plan.month} {plan.year}</span>
-                                            {plan.isCurrent && <span style={{ fontSize: '0.7rem', background: '#dbeafe', color: '#1e40af', padding: '0.2rem 0.5rem', borderRadius: '99px', fontWeight: 600 }}>CURRENT</span>}
+                                            {(plan.month === currentMonthName && plan.year === currentYear) && <span style={{ fontSize: '0.7rem', background: '#dbeafe', color: '#1e40af', padding: '0.2rem 0.5rem', borderRadius: '99px', fontWeight: 600 }}>CURRENT</span>}
                                         </div>
                                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                            {!plan.isCurrent && (
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); handleSetCurrent(actualIdx); }}
-                                                    style={{ fontSize: '0.8rem', color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer' }}
-                                                >
-                                                    Set as Current
-                                                </button>
-                                            )}
+                                            {/* Removed manual Set as Current button */}
                                             <span style={{ color: '#9ca3af' }}>{isExpanded ? '▼' : '►'}</span>
                                         </div>
                                     </div>
@@ -665,10 +582,95 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
                 {/* --- ADD/EDIT WEEK MODAL --- */}
                 {isWeekModalOpen && (
                     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                        {/* ... Existing Week Modal Content ... */}
                         <div style={{ background: 'white', width: '90%', maxWidth: '600px', borderRadius: '12px', padding: '2rem', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
-                            {/* ... (Kept existing content implicitly by targeting correct replacement block if entire block replaced, but here I am appending the Udyam modal after) ... */}
-                            {/* Actually easier to append the new modal at the end of the return */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827' }}>
+                                    {editingWeekIndex !== null ? 'Edit Week Plan' : 'Add Week Plan'}
+                                </h3>
+                                <button onClick={() => setIsWeekModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
+                                    <X size={24} />
+                                </button>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>Start Date</label>
+                                        <input
+                                            type="date"
+                                            value={weekFormData.startDate}
+                                            onChange={(e) => setWeekFormData({ ...weekFormData, startDate: e.target.value })}
+                                            style={{ width: '100%', padding: '0.6rem', alignItems: 'center', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>End Date</label>
+                                        <input
+                                            type="date"
+                                            value={weekFormData.endDate}
+                                            onChange={(e) => setWeekFormData({ ...weekFormData, endDate: e.target.value })}
+                                            style={{ width: '100%', padding: '0.6rem', alignItems: 'center', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>Plan / Targets (Bullet points)</label>
+                                    <textarea
+                                        rows={4}
+                                        value={weekFormData.plan}
+                                        onChange={(e) => setWeekFormData({ ...weekFormData, plan: e.target.value })}
+                                        placeholder="- Task 1\n- Task 2"
+                                        style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #d1d5db', resize: 'vertical', fontFamily: 'inherit' }}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>Achievements</label>
+                                    <textarea
+                                        rows={4}
+                                        value={weekFormData.achievement}
+                                        onChange={(e) => setWeekFormData({ ...weekFormData, achievement: e.target.value })}
+                                        placeholder="- Achieved X\n- Completed Y"
+                                        style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #d1d5db', resize: 'vertical', fontFamily: 'inherit' }}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>Additional Activities</label>
+                                    <textarea
+                                        rows={3}
+                                        value={weekFormData.additional}
+                                        onChange={(e) => setWeekFormData({ ...weekFormData, additional: e.target.value })}
+                                        style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #d1d5db', resize: 'vertical', fontFamily: 'inherit' }}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>Remarks</label>
+                                    <textarea
+                                        rows={2}
+                                        value={weekFormData.remarks}
+                                        onChange={(e) => setWeekFormData({ ...weekFormData, remarks: e.target.value })}
+                                        style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #d1d5db', resize: 'vertical', fontFamily: 'inherit' }}
+                                    />
+                                </div>
+
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+                                    <button
+                                        onClick={() => setIsWeekModalOpen(false)}
+                                        style={{ padding: '0.6rem 1.2rem', borderRadius: '8px', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer', fontWeight: 500 }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleSaveWeek}
+                                        style={{ padding: '0.6rem 1.5rem', borderRadius: '8px', border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer', fontWeight: 600 }}
+                                    >
+                                        Save Week Plan
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -743,85 +745,11 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
         );
     };
 
-    const renderMonthlyReports = () => (
-        <div style={{ padding: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1f2937' }}>Monthly Performance Reports</h3>
-                <button
-                    onClick={handleAddMonth}
-                    style={{ background: '#f59e0b', color: 'white', padding: '0.6rem 1.2rem', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500, boxShadow: '0 2px 4px rgba(245, 158, 11, 0.3)' }}
-                >
-                    <Trophy size={18} /> Add New Month
-                </button>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                {expert.plans && expert.plans.length > 0 ? (
-                    expert.plans.map((plan, idx) => (
-                        <div key={idx} style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', border: '1px solid #f3f4f6', transition: 'transform 0.2s' }} className="hover:scale-[1.02]">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                                <div>
-                                    <h4 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937' }}>{plan.month}</h4>
-                                    <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>{plan.year}</span>
-                                </div>
-                                {plan.isCurrent && <span style={{ fontSize: '0.75rem', background: '#dbeafe', color: '#2563eb', padding: '4px 12px', borderRadius: '99px', fontWeight: 600 }}>Current</span>}
-                            </div>
-
-                            <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4b5563' }}>
-                                <CheckCircle size={16} className="text-emerald-500" />
-                                <span style={{ fontWeight: 500 }}>{plan.weeks?.length || 0} Weekly Plans</span>
-                            </div>
-
-                            <button
-                                onClick={() => { handleSetCurrent(idx); setActiveTab('monthly'); }} // Stay on Monthly tab
-                                style={{ width: '100%', padding: '0.8rem', background: '#f9fafb', color: '#374151', borderRadius: '8px', border: '1px solid #e5e7eb', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s' }}
-                                className="hover:bg-gray-100"
-                            >
-                                View Detailed Plans &rarr;
-                            </button>
-                        </div>
-                    ))
-                ) : (
-                    <div style={{ gridColumn: '1/-1', textAlign: 'center', color: '#9ca3af', padding: '4rem', background: '#f9fafb', borderRadius: '16px', border: '2px dashed #e5e7eb' }}>
-                        <Trophy size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
-                        <p style={{ fontSize: '1.1rem', fontWeight: 500 }}>No monthly reports found.</p>
-                        <p style={{ fontSize: '0.9rem' }}>Add a new month to get started with tracking.</p>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
 
 
 
-    const renderMOMs = () => (
-        <div className="moms-container" style={{ background: 'white', padding: '2rem', borderRadius: '16px' }}>
-            <div className="chart-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', fontSize: '1.2rem', fontWeight: 600, color: '#1f2937' }}>
-                <FileText size={20} />
-                Minutes of Meeting & Events Log
-            </div>
-            {masterStats && masterStats.moms && masterStats.moms.length > 0 ? (
-                <div className="moms-list">
-                    {masterStats.moms.map((mom, idx) => (
-                        <div key={idx} style={{ padding: '1.5rem', borderBottom: '1px solid #f3f4f6' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#111827' }}>{mom.eventName}</span>
-                                <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>{new Date(mom.date).toLocaleDateString()}</span>
-                            </div>
-                            <div style={{ color: '#4b5563', lineHeight: '1.6', background: '#f9fafb', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
-                                <strong>Remarks/Details:</strong> {mom.remarks || 'No details provided.'}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <div style={{ textAlign: 'center', padding: '3rem', color: '#9ca3af' }}>
-                    <FileText size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
-                    <p>No Minutes of Meeting found in Master Records for this expert.</p>
-                </div>
-            )}
-        </div>
-    );
+
+
 
     return (
         <div className="expert-dashboard-modal">
@@ -922,14 +850,7 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
                                 <CheckCircle size={18} style={{ marginRight: '0.5rem' }} />
                                 Plans & Goals
                             </button>
-                            <button
-                                className={`tab-btn ${activeTab === 'monthly' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('monthly')}
-                                style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600, color: activeTab === 'monthly' ? '#fff' : '#6b7280', background: activeTab === 'monthly' ? '#f59e0b' : 'transparent', border: 'none', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}
-                            >
-                                <FileText size={18} style={{ marginRight: '0.5rem' }} />
-                                Monthly Reports
-                            </button>
+
                             <button
                                 className={`tab-btn ${activeTab === 'moms' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('moms')}
@@ -976,7 +897,7 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
                         <div className="dashboard-title">
                             {activeTab === 'overview' && 'Dashboard Overview'}
                             {activeTab === 'weekly' && 'Expert Plans & Goals'}
-                            {activeTab === 'monthly' && 'Monthly Performance'}
+
                             {activeTab === 'moms' && 'Event Documentation'}
                             {activeTab === 'profile' && 'Edit Profile'}
                         </div>
@@ -990,7 +911,7 @@ const ExpertDashboard = ({ expert, onClose, onUpdate, stats, onDelete }) => {
                         {activeTab === 'overview' && renderOverview()}
                         {activeTab === 'moms' && renderMoMs()}
                         {activeTab === 'profile' && renderEditProfile()}
-                        {activeTab === 'monthly' && renderMonthlyReports()}
+
                         {activeTab === 'weekly' && renderWeeklyPlans()}
                     </div>
                 </div>
